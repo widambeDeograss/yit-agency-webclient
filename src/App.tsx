@@ -11,6 +11,7 @@ import { Hero } from './components/home/hero';
 import About from './components/home/about';
 import Team from './components/home/team';
 import Ctas from './components/home/ctas';
+import TalkTheTechPage from './pages/talk-the-tech';
 
 export default function App() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -37,6 +38,7 @@ export default function App() {
        <About/>
        <Team/>
        <Ctas/>
+       {/* <TalkTheTechPage/> */}
       </div>
      <Footer/>
       </div>)

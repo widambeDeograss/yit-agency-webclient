@@ -1,11 +1,10 @@
 export const NAV_LINKS = [
     { name: "Home", path: "/" },
-    { name: "Events", path: "/events" },
-    { name: "Forums", path: "/forums" },
-    { name: "Blogs", path: "/blogs" },
-    { name: "Projects", path: "/projects" },
-    { name: "Newsletters", path: "/newsletters" },
     { name: "About", path: "/about" },
+    { name: "Events", path: "/events" },
+    { name: "Talk the tech", path: "/tet" },
+    { name: "Projects", path: "/projects" },
+    { name: "Contact", path: "/contact" },
   ];
   
   export const SDGS = [

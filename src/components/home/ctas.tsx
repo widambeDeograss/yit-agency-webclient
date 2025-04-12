@@ -5,22 +5,30 @@ const Ctas = () => {
   return (
     <div>
          {/* CTA Section */}
-      <section className="py-16 bg-slate-900 text-white">
+     
+      <section className="py-16 bg-background">
+   
         <div className="container mx-auto px-4 text-center">
+        <div className="relative">
+            <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/20 rounded-full filter blur-xl animate-blob"></div>
+            <div className="absolute -bottom-14 -right-14 w-40 h-40 bg-primary/30 rounded-full filter blur-xl animate-blob animation-delay-4000"></div>
+           
           <h2 className="text-3xl font-bold mb-6">Ready to Join the Tech Revolution?</h2>
-          <p className="text-gray-300 max-w-2xl mx-auto mb-8">
+          <p className="text-muted-foreground  max-w-2xl mx-auto mb-8">
             Be part of a dynamic community of young tech enthusiasts. Learn, grow, and innovate with us.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button className="bg-green-500 hover:bg-green-600 text-white px-8 py-6 text-lg">
+            <Button className="bg-primary hover:bg-green-600  px-8 py-6 text-lg">
               Join Our Community
             </Button>
-            <Button variant="outline" className="text-white border-white hover:bg-white hover:text-slate-900 px-8 py-6 text-lg">
+            <Button variant="outline" className=" px-8 py-6 text-lg">
               Contact Us
             </Button>
           </div>
         </div>
+        </div>
       </section>
+    
 
     </div>
   )
