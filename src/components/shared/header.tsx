@@ -13,7 +13,11 @@ const Logo = () => (
   </div>
 );
 
-export function Header() {
+interface HeaderProps {
+  open: () => void;
+}
+
+export function Header(auth: HeaderProps) {
   const { theme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   
@@ -55,10 +59,14 @@ export function Header() {
 
         <div className="flex items-center gap-2 ml-6">
           <ThemeSwitch />
-          <Button variant="outline" size="sm" className="text-foreground">
+          <Button variant="outline" size="sm" className="text-foreground"
+          onClick={auth.open}
+          >
             Sign In
           </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            onClick={auth.open}
+          >
             Register
           </Button>
         </div>

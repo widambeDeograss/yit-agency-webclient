@@ -1,25 +1,33 @@
-import React, { ReactNode } from 'react'
-import Header from '../components/Header'
-import Footer from '../components/Footer'
-import { Outlet } from 'react-router-dom';
+import Footer from "@/components/shared/footer";
+import { Header } from "@/components/shared/header";
+import { AuthModal } from "@/pages/auth/auth-view";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 
-interface MainProps {
-  children: ReactNode;
-}
+
 
 const Main = () => {
+  const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const handleAuthOpen = () => {
+    setIsAuthOpen(true);
+  };
+  const handleAuthClose = () => {
+    setIsAuthOpen(false);
+  };
   return (
     <div>
-    <Header/>
+      <Header  open={handleAuthOpen}/>
 
-    <div className='h-screen'>
       <Outlet />
+
+      <Footer/>
+
+      <AuthModal 
+        isOpen={isAuthOpen} 
+        onClose={handleAuthClose}
+      />
     </div>
+  );
+};
 
-    <Footer></Footer>
-
-    </div>
-  )
-}
-
-export default Main
+export default Main;
