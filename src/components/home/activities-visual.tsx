@@ -151,7 +151,7 @@ function BlogCard({ post }) {
         </div>
   
         {/* Glassmorphism Card */}
-        <div className="absolute top-1/2 left-0  -translate-y-1/2 w-52 rounded-xl shadow-sm z-10 
+        <div className="absolute top-3/4 left-0  -translate-y-1/2 w-52 rounded-xl shadow-sm z-10 
                         bg-white/0 dark:bg-white/0
                         backdrop-blur-sm border border-white/20 dark:border-white/10
                         ">
@@ -169,7 +169,7 @@ function BlogCard({ post }) {
               )}
             </div>
   
-            <h3 className="text-sm font-thin leading-tight mb-6">
+            <h3 className="text-base font-bold leading-tight mb-6">
               {post.title}
             </h3>
   
