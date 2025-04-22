@@ -33,6 +33,12 @@ const router = createBrowserRouter([
           Component: (await import('../pages/talk-the-tech')).default,
         }),
       },
+      {
+        path:"/forum/:id",
+        lazy: async () => ({
+          Component: (await import('../pages/talk-the-tech/components/forum-details')).default,
+        }),
+      },
     // {
     //   path: 'talk-the-tech',
     //   lazy: async () => ({

@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, UserInfo } from '../../types/auth-state';
+import { AuthState } from '../../types/auth-state';
+import { User } from '@/types/account';
 
 const authSlice = createSlice({
   name: 'auth',
@@ -9,12 +10,14 @@ const authSlice = createSlice({
       access: null,
       refresh: null
     },
-    isAuthenticated: false
+    isAuthenticated: false,
+    openLogin: false,
+    openRegister: false
   } as AuthState,
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ accessToken: string; refreshToken: string, user:UserInfo }>
+      action: PayloadAction<{ accessToken: string; refreshToken: string, user:User }>
     ) => {
       const { accessToken, refreshToken, user } = action.payload;
       console.log('user', user);
@@ -31,9 +34,17 @@ const authSlice = createSlice({
       state.user = null;
       state.tokens = { access: null, refresh: null };
       state.isAuthenticated = false;
-    }
+    },
+    SetOpenLogin: (state, action: PayloadAction<boolean>) => {
+      console.log('action.payload', action.payload);
+      
+      state.openLogin = action.payload;
+    },
+    SetOpenRegister: (state, action: PayloadAction<boolean>) => {
+      state.openRegister = action.payload;
+  }
   }
 });
 
-export const { setCredentials, setLogoutAction } = authSlice.actions;
+export const { setCredentials, setLogoutAction, SetOpenLogin } = authSlice.actions;
 export default authSlice.reducer;

@@ -13,6 +13,10 @@ import { Badge } from "@/components/ui/badge"
 import { NavigationTabs } from '@/components/talk-the -tech/nav-tabs'
 import { SidebarSection } from '@/components/talk-the -tech/sider'
 import { Progress } from '@/components/ui/progress'
+import { TalkHeader } from '@/components/talk-the -tech/header'
+import Forums from './components/forum-section'
+import Blogs from './components/blogs-section'
+import CreateForumModal from './components/create-forum'
 
 // Featured content highlight
 const FeaturedContent = () => (
@@ -48,85 +52,6 @@ const FeaturedContent = () => (
   </div>
 )
 
-// Mock data for different content types
-const forumPosts = [
-  {
-    type: 'forum',
-    title: 'Best state management in React 2024',
-    author: 'Sarah Johnson',
-    authorAvatar: 'SJ',
-    date: '3h ago',
-    comments: 45,
-    views: 256,
-    tags: ['react', 'frontend'],
-    likes: 128,
-    hot: true
-  },
-  {
-    type: 'forum',
-    title: 'Getting started with AI accelerators on cloud platforms',
-    author: 'James Wilson',
-    authorAvatar: 'JW',
-    date: '1d ago',
-    comments: 32,
-    views: 189,
-    tags: ['ai', 'cloud'],
-    likes: 95
-  },
-  {
-    type: 'forum',
-    title: 'Debugging strategies for complex microservices',
-    author: 'Lena Park',
-    authorAvatar: 'LP',
-    date: '2d ago',
-    comments: 28,
-    views: 176,
-    tags: ['microservices', 'debugging'],
-    likes: 87
-  },
-]
-
-const blogPosts = [
-  {
-    type: 'blog',
-    title: 'Introduction to TypeScript',
-    author: 'Michael Chen',
-    authorAvatar: 'MC',
-    date: '2d ago',
-    readTime: '8 min',
-    views: 1200,
-    tags: ['typescript', 'javascript'],
-    bookmarks: 234,
-    content: 'TypeScript has revolutionized how we write JavaScript by adding strong typing and other features that enhance developer experience and code quality...',
-    image: '/blog/typescript-intro.jpg'
-  },
-  {
-    type: 'blog',
-    title: 'Building Resilient APIs with GraphQL',
-    author: 'Priya Sharma',
-    authorAvatar: 'PS',
-    date: '3d ago',
-    readTime: '10 min',
-    views: 945,
-    tags: ['graphql', 'api'],
-    bookmarks: 187,
-    content: 'GraphQL provides a flexible query language for your API, giving clients the power to ask for exactly what they need and nothing more...',
-    image: '/blog/graphql-apis.jpg'
-  },
-  {
-    type: 'blog',
-    title: 'Machine Learning for Frontend Developers',
-    author: 'David Mueller',
-    authorAvatar: 'DM',
-    date: '5d ago',
-    readTime: '12 min',
-    views: 1560,
-    tags: ['machine-learning', 'frontend'],
-    bookmarks: 310,
-    content: 'As AI becomes more accessible, frontend developers can leverage machine learning models directly in the browser to create smarter, more responsive user experiences...',
-    image: '/blog/ml-frontend.jpg'
-  }
-]
 
 const polls = [
   {
@@ -161,16 +86,10 @@ const polls = [
 ]
 
 export default function TalkTheTechPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('forums')
-  const [sortBy, setSortBy] = useState('popular')
-  const [showFilters, setShowFilters] = useState(false)
+  const [activeTab, setActiveTab] = useState('forums');
+  const [createNewForum, setcreateNewForum] = useState(false);
 
-  const filteredContent = {
-    forums: forumPosts,
-    blogs: blogPosts,
-    polls: polls
-  }[activeTab]
+
 
   // Animation on scroll
   useEffect(() => {
@@ -193,256 +112,21 @@ export default function TalkTheTechPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <BlobBackground />
       
-      {/* Header component would be here */}
-      <div className="bg-background/80 backdrop-blur-sm py-6 sticky top-0 z-40 border-b border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <MessageSquare className="h-5 w-5 text-primary" />
-              </div>
-              <h1 className="text-xl font-bold">Talk The Tech</h1>
-            </div>
-            
-            <div className="relative max-w-md w-full mx-4 hidden md:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search discussions..." 
-                className="pl-10 bg-background/50"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
-              <Button className="bg-primary hover:bg-primary/90">
-                <Plus className="h-4 w-4 mr-2" /> Create Post
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <TalkHeader searchQuery={''} setSearchQuery={function (value: string): void {
+        throw new Error('Function not implemented.')
+      } }/>
       
       <NavigationTabs activeTab={activeTab} onTabChange={setActiveTab} />
       
       <div className="container mx-auto px-4 py-8">
         <FeaturedContent />
-        
-        <div className="grid lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="space-y-6 order-2 lg:order-1">
-            <div className="md:hidden mb-6">
-              <Input 
-                placeholder="Search discussions..." 
-                className="w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <SidebarSection title="Browse By">
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" size="sm" className="justify-start">
-                  <TrendingUp className="h-4 w-4 mr-2 text-primary" /> Trending
-                </Button>
-                <Button variant="outline" size="sm" className="justify-start">
-                  <Star className="h-4 w-4 mr-2 text-primary" /> Popular
-                </Button>
-                <Button variant="outline" size="sm" className="justify-start">
-                  <Clock className="h-4 w-4 mr-2 text-primary" /> Latest
-                </Button>
-                <Button variant="outline" size="sm" className="justify-start">
-                  <Bookmark className="h-4 w-4 mr-2 text-primary" /> Saved
-                </Button>
-              </div>
-            </SidebarSection>
-            
-            <SidebarSection title="Categories" >
-              <CategoryButton
-                icon={<Tag className="h-4 w-4 mr-2 text-primary" />}
-                label="Programming"
-                count={124}
-              />
-              <CategoryButton
-                icon={<Tag className="h-4 w-4 mr-2 text-green-600" />}
-                label="AI/ML"
-                count={89}
-              />
-              <CategoryButton
-                icon={<Tag className="h-4 w-4 mr-2 text-blue-600" />}
-                label="Web Dev"
-                count={156}
-              />
-              <CategoryButton
-                icon={<Tag className="h-4 w-4 mr-2 text-orange-600" />}
-                label="DevOps"
-                count={78}
-              />
-              <CategoryButton
-                icon={<Tag className="h-4 w-4 mr-2 text-purple-600" />}
-                label="Data Science"
-                count={93}
-              />
-            </SidebarSection>
+ 
 
-            <SidebarSection title="Popular Tags" >
-              <div className="flex flex-wrap gap-2">
-                {['react', 'typescript', 'nextjs', 'python', 'beginners', 'webdev', 'ai', 'frontend', 'backend'].map(tag => (
-                  <Button
-                    key={tag}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full text-sm px-3 h-7 hover:bg-primary/10 hover:text-primary"
-                  >
-                    #{tag}
-                  </Button>
-                ))}
-              </div>
-            </SidebarSection>
-            
-            <div className="bg-primary/5 rounded-xl p-4 border border-primary/10 fade-in-element">
-              <h3 className="font-medium text-sm mb-3">Join the conversation</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Connect with other tech enthusiasts and share your knowledge.
-              </p>
-              <Button className="w-full text-sm bg-primary hover:bg-primary/90">
-                Sign Up
-              </Button>
-            </div>
-          </div>
+            {activeTab === 'forums' && <Forums/>}
 
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6 order-1 lg:order-2">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">
-                {activeTab === 'forums' && 'Discussions'}
-                {activeTab === 'blogs' && 'Latest Articles'}
-                {activeTab === 'polls' && 'Community Polls'}
-              </h2>
-              
-              <Tabs defaultValue={sortBy} onValueChange={setSortBy} className="hidden sm:block">
-                <TabsList className="bg-muted/50">
-                  <TabsTrigger value="popular" className="text-xs">Popular</TabsTrigger>
-                  <TabsTrigger value="recent" className="text-xs">Recent</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+            {activeTab === 'blogs' && <Blogs/>}
 
-            {activeTab === 'forums' && filteredContent.map((post, index) => (
-              <div 
-                key={index} 
-                className="bg-card rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 border border-border/50 fade-in-element"
-              >
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback>{post.authorAvatar}</AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{post.author}</span>
-                      <span className="text-sm text-muted-foreground">• {post.date}</span>
-                      {post.hot && (
-                        <Badge className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs">Hot</Badge>
-                      )}
-                    </div>
-                    
-                    <h3 className="text-lg font-semibold mb-2 hover:text-primary transition-colors">
-                      {post.title}
-                    </h3>
-                    
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {post.tags.map(tag => (
-                        <Badge key={tag} variant="outline" className="hover:bg-primary/10 hover:text-primary">
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-4 w-4" />
-                        {post.comments}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4" />
-                        {post.likes}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <PieChart className="h-4 w-4" />
-                        {post.views} views
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {activeTab === 'blogs' && filteredContent.map((post, index) => (
-              <div 
-                key={index} 
-                className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-border/50 fade-in-element"
-              >
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="md:w-1/3 bg-primary/10 h-48 md:h-auto shrink-0 relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center bg-primary/5">
-                      <FileText className="h-12 w-12 text-primary/50" />
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1 p-5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge className="bg-primary/10 text-primary hover:bg-primary/20 text-xs">
-                        {post.readTime} read
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">• {post.date}</span>
-                    </div>
-                    
-                    <h3 className="text-xl font-semibold mb-2 hover:text-primary transition-colors">
-                      {post.title}
-                    </h3>
-                    
-                    <p className="text-muted-foreground mb-4 line-clamp-2">
-                      {post.content}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {post.tags.map(tag => (
-                        <Badge key={tag} variant="outline" className="hover:bg-primary/10 hover:text-primary">
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-sm">
-                        <Avatar className="h-6 w-6 mr-2">
-                          <AvatarFallback>{post.authorAvatar}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{post.author}</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <PieChart className="h-4 w-4" />
-                          {post.views}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Bookmark className="h-4 w-4" />
-                          {post.bookmarks}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {activeTab === 'polls' && filteredContent.map((poll, index) => (
+            {activeTab === 'polls' && polls.map((poll, index) => (
               <div 
                 key={index} 
                 className="bg-card rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-border/50 fade-in-element"
@@ -503,14 +187,10 @@ export default function TalkTheTechPage() {
               </div>
             ))}
             
-            <div className="flex justify-center pt-4">
-              <Button variant="outline" className="w-full md:w-auto">
-                Load More
-              </Button>
-            </div>
-          </div>
-        </div>
+          
+
       </div>
+      <CreateForumModal/>
     </div>
   )
 }

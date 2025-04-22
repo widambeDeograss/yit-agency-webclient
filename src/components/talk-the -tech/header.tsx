@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { MessageSquare, PlusCircle, User } from "lucide-react"
+import { Filter, MessageSquare, Plus, PlusCircle, User } from "lucide-react"
 import { SearchBar } from "@/components/custom/search"
 
 export function TalkHeader({ searchQuery, setSearchQuery }: {
@@ -7,30 +7,30 @@ export function TalkHeader({ searchQuery, setSearchQuery }: {
   setSearchQuery: (value: string) => void
 }) {
   return (
-    <header className="w-full bg-card shadow-sm">
-      <div className="container flex items-center justify-between h-16 gap-4 mx-auto">
-        {/* Empty spacer to push content to right */}
-        <div className="flex-1" />
-        
-        {/* Search Bar - Takes remaining space */}
-        <div className="flex-1 max-w-2xl">
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
-        </div>
-
-        {/* Logo and Title - Right-aligned */}
-        <div className="flex-1 flex justify-end items-center gap-2">
-          <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-            <div className="w-32 h-24">
-              <img 
-                src="/logos/tet2.png" 
-                alt="logo" 
-                className="rounded-b-xl shadow-lg overflow-hidden object-fit w-full h-full"
-              />
-            </div>
-          </div>
-          <h1 className="text-xl font-bold">Talk the Tech</h1>
-        </div>
-      </div>
-    </header>
+    <div className="bg-background/80 backdrop-blur-sm py-6 sticky top-0 z-40 border-b border-border">
+   <div className="container mx-auto px-4">
+     <div className="flex items-center justify-between">
+       <div className="flex items-center gap-3">
+         {/* <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+           <MessageSquare className="h-5 w-5 text-primary" />
+         </div>
+         <h1 className="text-xl font-bold">Talk The Tech</h1> */}
+       </div>
+       
+       <SearchBar value={searchQuery} onChange={setSearchQuery} />
+       
+       <div className="flex items-center gap-3">
+         <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
+           <Filter className="h-4 w-4" />
+           Filter
+         </Button>
+         
+         <Button className="bg-primary hover:bg-primary/90">
+           <Plus className="h-4 w-4 mr-2" /> Create Post
+         </Button>
+       </div>
+     </div>
+   </div>
+ </div>
   )
 }
