@@ -34,13 +34,8 @@ class AuthService extends APIClient {
     return this.post<LoginResponse>('/accounts/auth/login/', credentials);
   }
 
-  
   regieter(credentials: any) {
-    return this.post<any>('/auth/register', credentials, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return this.post<any>('/accounts/auth/register/', credentials);
   }
 
   currentUserProfile() {

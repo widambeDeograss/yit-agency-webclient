@@ -17,17 +17,10 @@ export function TalkHeader({ searchQuery, setSearchQuery }: {
          <h1 className="text-xl font-bold">Talk The Tech</h1> */}
        </div>
        
-       <SearchBar value={searchQuery} onChange={setSearchQuery} />
+       
        
        <div className="flex items-center gap-3">
-         <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
-           <Filter className="h-4 w-4" />
-           Filter
-         </Button>
-         
-         <Button className="bg-primary hover:bg-primary/90">
-           <Plus className="h-4 w-4 mr-2" /> Create Post
-         </Button>
+       
        </div>
      </div>
    </div>

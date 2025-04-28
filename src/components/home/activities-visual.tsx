@@ -1,60 +1,78 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import pic1 from '@/assets/events/env2.jpeg';
+import pic2 from '@/assets/events/evn3.jpeg';
+import pic3 from '@/assets/events/evn4.jpeg';
+import pic4 from '@/assets/events/evn5.jpeg';
+import pic5 from '@/assets/events/evn6.jpeg';
+import pic6 from '@/assets/events/evn7.jpeg';
+import pic7 from '@/assets/events/evn8.jpeg';
+import pic8 from '@/assets/events/evn9.jpeg';
+import pic9 from '@/assets/events/evn10.jpeg';
+import pic10 from '@/assets/events/evn11.jpeg';
+import pic11 from '@/assets/events/env2.jpeg';
+
 
 // Sample blog post data
 const blogPosts = [
   {
-    category: "Live Well",
-    title: "5 ways to relieve stress during the holidays",
-    author: "Riley Steinmetz",
-    date: "April 20, 2024",
-    imageId: "1X893"
+    title: "Innovation starts with empowered youth",
+    imageId: pic1
   },
   {
-    category: "Get Well",
-    title: "Baby flat head pillow - why its important",
-    author: "Ken William",
-    date: "April 24, 2024",
-    imageId: "0X893"
+    title: "Young ideas, global impact",
+    imageId:pic2
   },
   {
-    category: "Eat Well",
-    title: "Nutrition tips for a balanced diet",
-    author: "Maya Johnson",
-    date: "April 18, 2024",
-    imageId: "2X893"
+    title: "Tech is the tool & vision is the power.",
+    imageId: pic3
   },
   {
-    category: "Work Well",
-    title: "Creating a productive home office",
-    author: "Tyler Grant",
-    date: "April 15, 2024",
-    imageId: "3X893"
+    title: "Every idea has the power to transform",
+    imageId: pic4
   },
   {
-    category: "Sleep Well",
-    title: "How to improve your sleep quality",
-    author: "Nina Patel",
-    date: "April 22, 2024",
-    imageId: "4X893"
+    title: "Inspiring creativity, innovation, and leadership in every session",
+    imageId: pic5
   },
   {
-    category: "Think Well",
-    title: "Mindfulness practices for daily life",
-    author: "Leo Chen",
-    date: "April 19, 2024",
-    imageId: "5X893"
-  }
+    title: "Empowering the next generation of tech leaders",
+    imageId: pic6
+  },
+  {
+    title: "Where ambition meets innovation",
+    imageId: pic7
+  },
+  {
+    title: "Building tomorrow through technology today",
+    imageId: pic8
+  },
+  {
+    title: "Young minds, bold visions", 
+    imageId: pic9
+  },
+  {
+    title: "Technology unlocks limitless potential.",
+    imageId: pic10
+  },
+  {
+    title: "Shaping the future, one idea at a time",
+    imageId: pic11
+  },
+  // {
+  //   title: "Where creativity meets opportunity",
+  //   imageId: pic12
+  // },
 ];
 
 export default function ActivityCarousel() {
-  const scrollContainerRef = useRef(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [autoScroll, setAutoScroll] = useState(true);
   
   // Handle auto-scrolling
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout | undefined;
     
     if (autoScroll && scrollContainerRef.current) {
       interval = setInterval(() => {
@@ -81,7 +99,7 @@ export default function ActivityCarousel() {
   const handleMouseLeave = () => setAutoScroll(true);
   
   // Manual navigation
-  const scroll = (direction) => {
+  const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const scrollAmount = direction === 'left' ? -320 : 320;
       const newPosition = Math.max(0, scrollPosition + scrollAmount);
@@ -95,7 +113,7 @@ export default function ActivityCarousel() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-            Explore Our Latest Perspectives
+            Explore Our Latest Events
             <br />
             and Expertise
           </h2>
@@ -138,13 +156,18 @@ export default function ActivityCarousel() {
     </div>
   );
 }
-function BlogCard({ post }) {
+interface BlogPost {
+  title: string;
+  imageId: string;
+}
+
+function BlogCard({ post }: { post: BlogPost }) {
     return (
       <div className="flex-shrink-0 w-96 h-96 relative">
         {/* Background Image */}
         <div className="absolute inset-0 rounded-lg overflow-hidden">
           <img 
-            src="https://img.freepik.com/free-photo/creative-students-collaborating-with-laptop_23-2147664080.jpg?ga=GA1.1.758269213.1736070258&semt=ais_hybrid&w=740" 
+            src={post.imageId} 
             alt="Group project" 
             className="w-full h-full object-cover"
           />
@@ -159,7 +182,7 @@ function BlogCard({ post }) {
           <div className="absolute w-40 h-40 bg-cyan-400/20 rounded-full blur-2xl -top-10 -left-10 z-0"></div>
   
           <div className="p-4 relative z-10 text-sm text-black dark:text-white">
-            <div className="font-semibold mb-2">
+            {/* <div className="font-semibold mb-2">
               {post.category === "Live Well" ? (
                 <span>{post.category}</span>
               ) : post.category === "Get Well" ? (
@@ -167,16 +190,16 @@ function BlogCard({ post }) {
               ) : (
                 <span>{post.category}</span>
               )}
-            </div>
+            </div> */}
   
             <h3 className="text-base font-bold leading-tight mb-6">
               {post.title}
             </h3>
   
-            <div className="flex justify-between text-xs text-muted-foreground dark:text-gray-300 mt-auto">
+            {/* <div className="flex justify-between text-xs text-muted-foreground dark:text-gray-300 mt-auto">
               <span>By {post.author}</span>
               <span>{post.date}</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

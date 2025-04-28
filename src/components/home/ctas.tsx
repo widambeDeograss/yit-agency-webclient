@@ -1,7 +1,15 @@
 import React from 'react'
 import { Button } from '../ui/button'
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/hooks/use-auth-store';
+import { useAppDispatch } from '@/store/store-hooks';
+import { SetOpenLogin } from '@/store/slices/auth/auth.slice';
 
 const Ctas = () => {
+  const navigate =  useNavigate();
+  const {isAuthenticated} =  useAuthStore();
+  const dispatch = useAppDispatch();
+
   return (
     <div>
          {/* CTA Section */}
@@ -18,7 +26,15 @@ const Ctas = () => {
             Be part of a dynamic community of young tech enthusiasts. Learn, grow, and innovate with us.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button className="bg-primary hover:bg-green-600  px-8 py-6 text-lg">
+            <Button className="bg-primary hover:bg-green-600  px-8 py-6 text-lg"
+            onClick={() => {
+              if (isAuthenticated) {
+                navigate('/tet');
+              } else {
+                dispatch(SetOpenLogin(true));
+              }
+            }}
+            >
               Join Our Community
             </Button>
             <Button variant="outline" className=" px-8 py-6 text-lg">

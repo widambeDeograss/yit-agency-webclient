@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { FormEventHandler, useState, useEffect, use } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
@@ -40,34 +39,136 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { forumsService } from '@/apis/services/tet/forums.services';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useAppDispatch } from '@/store/store-hooks';
 import { SetOpenLogin } from '@/store/slices/auth/auth.slice';
+import { Discussion } from '@/types/tet-forums';
+import { toast } from 'react-toastify';
+import DiscussionForm from './new-forum-discussion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 
 const ForumDetailsPage = () => {
   const { id: forumId } = useParams();
   const [activeTab, setActiveTab] = useState("discussions");
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated,user } = useAuthStore();
   const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const [following, setFollowing] = useState(false);
   const [createDiscussionOpen, setCreateDiscussionOpen] = useState(false);
-  const [newDiscussion, setNewDiscussion] = useState({
-    title: "",
-    content: ""
-  });
   const [currentPage, setCurrentPage] = useState(1);
-  const [reactionMenuOpen, setReactionMenuOpen] = useState(null);
+  const [reactionMenuOpen, setReactionMenuOpen] = useState<number | null>(null);
 
+  // Query for forum details
   const { data: forum, isLoading: loadingForum } = useQuery({
     queryKey: ['forum', forumId],
     queryFn: () => forumsService.getForumById(forumId),
   });
 
+  // Query for discussion list
   const { data: discussions, isLoading: loadingDiscussions } = useQuery({
     queryKey: ['discussions', forumId, currentPage],
-    queryFn: () => forumsService.forumDisscussions(forumId, { page: currentPage }),
+    queryFn: () => forumsService.forumDiscussions(forumId, { page: currentPage }),
+  });
+
+  // Check forum follow status when authenticated
+  useEffect(() => {
+    if (isAuthenticated && forumId) {
+      forumsService.checkForumFollowStatus(forumId)
+        .then(data => {
+          setFollowing(data.is_following);
+        })
+        .catch(error => {
+          console.error("Error checking follow status:", error);
+        });
+    }
+  }, [isAuthenticated, forumId]);
+
+  // Mutations for forum follow/unfollow
+  const followMutation = useMutation({
+    mutationFn: () => forumsService.followForum(forumId),
+    onSuccess: () => {
+      setFollowing(true);
+      toast.info("You are now following this forum",
+      );
+      queryClient.invalidateQueries({ queryKey: ['forum', forumId] });
+    },
+    onError: (error) => {
+      console.error("Error following forum:", error);
+      toast.error("Failed to follow forum. Please try again.",
+      );
+    }
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => forumsService.unfollowForum(forumId),
+    onSuccess: () => {
+      setFollowing(false);
+      toast.info("You have unfollowed this forum",
+      );
+      queryClient.invalidateQueries({ queryKey: ['forum', forumId] });
+    },
+    onError: (error) => {
+      console.error("Error unfollowing forum:", error);
+      toast.error("Failed to unfollow forum. Please try again.");
+    }
+  });
+
+  // Mutation for creating discussions
+  const createDiscussionMutation = useMutation({
+    mutationFn: (newDiscussion: { title: string; content: string }) => forumsService.createDiscussion(forumId, 
+      {
+        ...newDiscussion,
+        "forum": forumId,
+        "author": user?.id,
+
+      }
+    ),
+    onSuccess: () => {
+      setCreateDiscussionOpen(false);
+      toast.success("Discussion created successfully",
+      );
+      queryClient.invalidateQueries({ queryKey: ['discussions', forumId] });
+    },
+    onError: (error) => {
+      console.error("Error creating discussion:", error);
+      toast.error("Failed to create discussion. Please try again.");
+    }
+  });
+
+  // Mutations for discussion reactions
+  const addReactionMutation = useMutation({
+    mutationFn: ({ discussionId, reaction }: any) => {
+      return forumsService.createForumReaction(discussionId, {
+        "reaction": reaction,
+      });
+    },
+    onSuccess: (data, variables) => {
+      toast.success(`You reacted to the discussion with ${variables.reaction}`);
+      setReactionMenuOpen(null);
+      queryClient.invalidateQueries({ queryKey: ['discussions', forumId] });
+    },
+    onError: (error) => {
+      console.error("Error adding reaction:", error);
+      toast("Failed to add reaction. Please try again.");
+    }
+  });
+
+  const removeReactionMutation = useMutation({
+    mutationFn: (discussionId: number) => {
+      return forumsService.removeForumReaction(discussionId);
+    },
+    onSuccess: () => {
+      toast.info("Your reaction has been removed");
+      queryClient.invalidateQueries({ queryKey: ['discussions', forumId] });
+    },
+    onError: (error) => {
+      console.error("Error removing reaction:", error);
+      toast.error("Failed to remove reaction. Please try again.");
+    }
   });
 
   const handleLoginModal = () => {
@@ -79,58 +180,42 @@ const ForumDetailsPage = () => {
       handleLoginModal();
       return;
     }
-    
-    try {
-      setFollowing(!following);
-      // API call would go here
-    } catch (error) {
-      console.error("Error updating follow status:", error);
-      setFollowing(following);
+
+    if (following) {
+      unfollowMutation.mutate();
+    } else {
+      followMutation.mutate();
     }
   };
 
-  const handleCreateDiscussion = async (e) => {
-    e.preventDefault();
-    
+  const handleCreateDiscussion = async (newDiscussion: { title: string; content: string }) => {
+  
     if (!newDiscussion.title.trim() || !newDiscussion.content.trim()) {
+      toast.info("Please provide both title and content");
       return;
     }
-    
-    try {
-      // API call would go here
-      setCreateDiscussionOpen(false);
-      setNewDiscussion({ title: "", content: "" });
-    } catch (error) {
-      console.error("Error creating discussion:", error);
-    }
+
+    createDiscussionMutation.mutate(newDiscussion);
   };
 
-  const handleReaction = async (discussionId, reaction) => {
+   const handleReaction = async (discussionId: number, reaction: string) => {
     if (!isAuthenticated) {
       handleLoginModal();
       return;
     }
-    
-    try {
-      // Close the reaction menu
-      setReactionMenuOpen(null);
-      
-      // API call to the reaction endpoint
-      const response = await fetch(`/api/reactions/discussion/${discussionId}/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reaction }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to submit reaction");
-      }
-      
-      // Update the discussions data with the new reaction
-      // In a real implementation, you might refetch data or update the cache
-    } catch (error) {
-      console.error("Error submitting reaction:", error);
+
+    // Find the discussion to check if user already reacted
+    const discussion = discussions?.results.find(d => d.id === discussionId);
+
+    if (discussion?.user_reaction === reaction) {
+      // User clicked the same reaction again, so remove it
+      removeReactionMutation.mutate(discussionId);
+    } else {
+      // Add new reaction (this will replace any existing reaction)
+      addReactionMutation.mutate({ discussionId, reaction });
     }
+
+    setReactionMenuOpen(null);
   };
 
   const goToNextPage = () => {
@@ -178,7 +263,7 @@ const ForumDetailsPage = () => {
     );
   }
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
@@ -198,7 +283,7 @@ const ForumDetailsPage = () => {
         <span className="mx-2">/</span>
         <span className="text-foreground">{forum.title}</span>
       </div>
-      
+
       {/* Forum Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -210,12 +295,13 @@ const ForumDetailsPage = () => {
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
               variant={following ? "default" : "outline"}
               size="sm"
               onClick={handleFollowToggle}
+              disabled={followMutation.isPending || unfollowMutation.isPending}
             >
               {following ? (
                 <>
@@ -229,24 +315,28 @@ const ForumDetailsPage = () => {
                 </>
               )}
             </Button>
-            
+
             <Button variant="outline" size="sm">
               <Share2 className="h-4 w-4 mr-1" />
               Share
             </Button>
           </div>
         </div>
-        
-        <p className="text-muted-foreground mb-4">{forum.description}</p>
-        
+
+       <ReactMarkdown
+       
+       >
+       {forum.description}
+       </ReactMarkdown>
+
         <div className="flex flex-wrap gap-2 mb-4">
-          {forum.tags && forum.tags.map(tag => (
-            <Badge key={tag.id} variant="outline" className="hover:bg-primary/10 hover:text-primary">
-              #{tag.name}
+          {forum.category &&
+            <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary">
+              #{forum.category.name}
             </Badge>
-          ))}
+          }
         </div>
-        
+
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <User className="h-4 w-4" />
@@ -262,14 +352,14 @@ const ForumDetailsPage = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="mb-6">
         {/* Tabs and New Discussion Button */}
         <div className="flex items-center justify-between mb-6">
-          <Tabs 
-            defaultValue="discussions" 
-            value={activeTab} 
+          <Tabs
+            defaultValue="discussions"
+            value={activeTab}
             onValueChange={setActiveTab}
             className="w-full"
           >
@@ -279,125 +369,129 @@ const ForumDetailsPage = () => {
               <TabsTrigger value="popular">Popular</TabsTrigger>
             </TabsList>
 
-                {/* Discussions List */}
-        <TabsContent value="discussions" className="mt-0">
-          {!discussions?.results || discussions.results.length === 0 ? (
-            <Card className="text-center py-12">
-              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No discussions yet</h3>
-              <p className="text-muted-foreground mb-6">Be the first to start a discussion in this forum!</p>
-              <Button onClick={() => isAuthenticated ? setCreateDiscussionOpen(true) : handleLoginModal()}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Discussion
-              </Button>
-            </Card>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {discussions.results.map((discussion) => (
-                  <DiscussionCard 
-                    key={discussion.id} 
-                    discussion={discussion} 
-                    handleReaction={handleReaction}
-                    reactionMenuOpen={reactionMenuOpen === discussion.id}
-                    setReactionMenuOpen={setReactionMenuOpen}
-                    isAuthenticated={isAuthenticated}
-                  />
-                ))}
-              </div>
-              
-              {/* Pagination */}
-              {(discussions.previous || discussions.next) && (
-                <div className="flex justify-center mt-6">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToPreviousPage}
-                      disabled={!discussions.previous}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
-                    
-                    <span className="text-sm text-muted-foreground px-2">
-                      Page {currentPage}
-                    </span>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToNextPage}
-                      disabled={!discussions.next}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+            {/* Discussions List */}
+            <TabsContent value="discussions" className="mt-0">
+              {!discussions?.results || discussions.results.length === 0 ? (
+                <Card className="text-center py-12">
+                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No discussions yet</h3>
+                  <p className="text-muted-foreground mb-6">Be the first to start a discussion in this forum!</p>
+                  <Button onClick={() => isAuthenticated ? setCreateDiscussionOpen(true) : handleLoginModal()}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    New Discussion
+                  </Button>
+                </Card>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {discussions.results.map((discussion) => (
+                      <DiscussionCard
+                        key={discussion.id}
+                        discussion={discussion}
+                        handleReaction={handleReaction}
+                        reactionMenuOpen={reactionMenuOpen === discussion.id}
+                        setReactionMenuOpen={setReactionMenuOpen}
+                        isAuthenticated={isAuthenticated}
+                      />
+                    ))}
                   </div>
+
+                  {/* Pagination */}
+                  {(discussions.previous || discussions.next) && (
+                    <div className="flex justify-center mt-6">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToPreviousPage}
+                          disabled={!discussions.previous}
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1" />
+                          Previous
+                        </Button>
+
+                        <span className="text-sm text-muted-foreground px-2">
+                          Page {currentPage}
+                        </span>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToNextPage}
+                          disabled={!discussions.next}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="pinned" className="mt-0">
+              {forum.pinned_discussions && forum.pinned_discussions.length > 0 ? (
+                <div className="space-y-4">
+                  {forum.pinned_discussions.map((discussion) => (
+                    <DiscussionCard
+                      key={discussion.id}
+                      discussion={discussion}
+                      handleReaction={handleReaction}
+                      reactionMenuOpen={reactionMenuOpen === discussion.id}
+                      setReactionMenuOpen={setReactionMenuOpen}
+                      isAuthenticated={isAuthenticated}
+                      pinned
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card className="text-center py-12">
+                  <Pin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No pinned discussions</h3>
+                  <p className="text-muted-foreground">Moderators can pin important discussions here.</p>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="popular" className="mt-0">
+              {!discussions?.results || discussions.results.length === 0 ? (
+                <Card className="text-center py-12">
+                  <Flame className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No popular discussions yet</h3>
+                  <p className="text-muted-foreground">Popular discussions will appear here.</p>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {discussions.results
+                    .slice()
+                    .sort((a, b) => b.views - a.views)
+                    .slice(0, 5)
+                    .map((discussion) => (
+                      <DiscussionCard
+                        key={discussion.id}
+                        discussion={discussion}
+                        handleReaction={handleReaction}
+                        reactionMenuOpen={reactionMenuOpen === discussion.id}
+                        setReactionMenuOpen={setReactionMenuOpen}
+                        isAuthenticated={isAuthenticated}
+                        popular
+                      />
+                    ))}
                 </div>
               )}
-            </>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="pinned" className="mt-0">
-          {forum.pinned_discussions && forum.pinned_discussions.length > 0 ? (
-            <div className="space-y-4">
-              {forum.pinned_discussions.map((discussion) => (
-                <DiscussionCard 
-                  key={discussion.id} 
-                  discussion={discussion} 
-                  handleReaction={handleReaction}
-                  reactionMenuOpen={reactionMenuOpen === discussion.id}
-                  setReactionMenuOpen={setReactionMenuOpen}
-                  isAuthenticated={isAuthenticated}
-                  pinned
-                />
-              ))}
-            </div>
-          ) : (
-            <Card className="text-center py-12">
-              <Pin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No pinned discussions</h3>
-              <p className="text-muted-foreground">Moderators can pin important discussions here.</p>
-            </Card>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="popular" className="mt-0">
-          {!discussions?.results || discussions.results.length === 0 ? (
-            <Card className="text-center py-12">
-              <Flame className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No popular discussions yet</h3>
-              <p className="text-muted-foreground">Popular discussions will appear here.</p>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {discussions.results
-                .slice()
-                .sort((a, b) => b.views - a.views)
-                .slice(0, 5)
-                .map((discussion) => (
-                  <DiscussionCard 
-                    key={discussion.id} 
-                    discussion={discussion} 
-                    handleReaction={handleReaction}
-                    reactionMenuOpen={reactionMenuOpen === discussion.id}
-                    setReactionMenuOpen={setReactionMenuOpen}
-                    isAuthenticated={isAuthenticated}
-                    popular
-                  />
-                ))}
-            </div>
-          )}
-        </TabsContent>
+            </TabsContent>
 
 
           </Tabs>
-          
-          
+
+
         </div>
-        <Button
+        {
+          isAuthenticated ? <DiscussionForm onSubmit={handleCreateDiscussion} onCancel={function (): void {
+            throw new Error('Function not implemented.');
+          }} isPending={createDiscussionMutation.isPending}
+          /> : <Button
             onClick={() => {
               if (!isAuthenticated) {
                 handleLoginModal();
@@ -409,70 +503,32 @@ const ForumDetailsPage = () => {
             <PlusCircle className="h-4 w-4 mr-2" />
             New Discussion
           </Button>
-    
+        }
+
       </div>
-      
-      {/* Create Discussion Dialog */}
-      <Dialog open={createDiscussionOpen} onOpenChange={setCreateDiscussionOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Create New Discussion</DialogTitle>
-            <DialogDescription>
-              Start a new discussion in {forum.title}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreateDiscussion}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-medium">
-                  Title
-                </label>
-                <input
-                  id="title"
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Enter a descriptive title"
-                  value={newDiscussion.title}
-                  onChange={(e) => setNewDiscussion(prev => ({ ...prev, title: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="content" className="text-sm font-medium">
-                  Content
-                </label>
-                <textarea
-                  id="content"
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Share your thoughts, questions, or ideas..."
-                  rows={6}
-                  value={newDiscussion.content}
-                  onChange={(e) => setNewDiscussion(prev => ({ ...prev, content: e.target.value }))}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setCreateDiscussionOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Post Discussion</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
 
-// Extracted Discussion Card Component
-const DiscussionCard = ({ 
-  discussion, 
-  handleReaction, 
-  reactionMenuOpen, 
-  setReactionMenuOpen, 
+// Updated Discussion Card Component
+const DiscussionCard = ({
+  discussion,
+  handleReaction,
+  reactionMenuOpen,
+  setReactionMenuOpen,
   isAuthenticated,
-  pinned = false, 
-  popular = false 
+  pinned = false,
+  popular = false
+}: {
+  discussion: Discussion;
+  handleReaction: (discussionId: number, reaction: string) => void;
+  reactionMenuOpen: boolean;
+  setReactionMenuOpen: (id: number | null) => void;
+  isAuthenticated: boolean;
+  pinned?: boolean;
+  popular?: boolean;
 }) => {
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
@@ -481,13 +537,13 @@ const DiscussionCard = ({
     }).format(date);
   };
 
-  const truncateContent = (content, maxLength = 150) => {
+  const truncateContent = (content: any, maxLength = 150) => {
     if (!content) return '';
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength) + '...';
   };
 
-  // Available reactions based on the REACTION_CHOICES from your model
+  // Available reactions based on the REACTION_CHOICES from the model
   const availableReactions = [
     { emoji: '👍', name: 'Thumbs Up', key: 'thumbs_up' },
     { emoji: '👎', name: 'Thumbs Down', key: 'thumbs_down' },
@@ -496,13 +552,12 @@ const DiscussionCard = ({
     { emoji: '👀', name: 'Eyes', key: 'eyes' },
     { emoji: '🔥', name: 'Fire', key: 'fire' },
     { emoji: '🎉', name: 'Party Popper', key: 'party' },
+    { emoji: '👏', name: 'Clap', key: 'clap' },
     { emoji: '🤔', name: 'Thinking Face', key: 'thinking' }
   ];
 
-  // Get total reactions count
   const getTotalReactions = () => {
-    if (!discussion.reactions_count) return 0;
-    return Object.values(discussion.reactions_count).reduce((acc, count) => acc + count, 0);
+    return discussion.reactions?.length || 0;
   };
 
   // Function to toggle reaction popup
@@ -512,6 +567,21 @@ const DiscussionCard = ({
     } else {
       setReactionMenuOpen(discussion.id);
     }
+  };
+
+  const countReactionsByType = () => {
+    const reactionCounts: Record<string, number> = {};
+
+    if (discussion.reactions && discussion.reactions.length > 0) {
+      discussion.reactions.forEach(reaction => {
+        if (!reactionCounts[reaction.reaction]) {
+          reactionCounts[reaction.reaction] = 0;
+        }
+        reactionCounts[reaction.reaction] += 1;
+      });
+    }
+
+    return reactionCounts;
   };
 
   return (
@@ -529,7 +599,7 @@ const DiscussionCard = ({
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1">
             {discussion.is_locked && (
               <Badge variant="outline" className="bg-red-500/10 text-red-500">
@@ -546,7 +616,7 @@ const DiscussionCard = ({
                 <Flame className="h-3 w-3 mr-1" /> Hot
               </Badge>
             )}
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -573,18 +643,23 @@ const DiscussionCard = ({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
-        <div className="block">
+        <Link to={`/discussions/${discussion.id}`} className="block">
           <h3 className="text-xl font-semibold mb-2 hover:text-primary transition-colors">
             {discussion.title}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {truncateContent(discussion.content)}
+                  <ReactMarkdown 
+                         remarkPlugins={[remarkGfm]}
+             rehypePlugins={[rehypeHighlight]}
+                         >
+                           {discussion.content}
+                         </ReactMarkdown>
           </p>
-        </div>
+        </Link>
       </CardContent>
-      
+
       <CardFooter className="pt-0">
         <div className="w-full">
           {/* Current reactions */}
@@ -593,36 +668,46 @@ const DiscussionCard = ({
               {getTotalReactions() > 0 ? (
                 <div className="flex items-center gap-1">
                   <div className="flex items-center p-1 px-2 bg-secondary/50 rounded-full text-sm">
-                    {availableReactions
-                      .filter(r => discussion.reactions_count?.[r.key] > 0)
+                    {Object.entries(countReactionsByType())
+                      .sort((a, b) => b[1] - a[1])
                       .slice(0, 3)
-                      .map((reaction, idx) => (
-                        <span key={idx} className="mr-1">{reaction.emoji}</span>
+                      .map(([emoji, count]) => (
+                        <div key={emoji} className="flex items-center mr-1">
+                          <span>{emoji}</span>
+                          {count > 1 && (
+                            <span className="text-xs ml-0.5 text-muted-foreground">
+                              {count}
+                            </span>
+                          )}
+                        </div>
                       ))}
-                    <span className="ml-1 text-muted-foreground">{getTotalReactions()}</span>
+                    <span className="ml-1 text-muted-foreground">
+                      {/* {getTotal<span className="ml-1 text-muted-foreground"> */}
+                      {getTotalReactions()}
+                    </span>
                   </div>
                 </div>
               ) : (
                 <span className="text-sm text-muted-foreground">No reactions yet</span>
               )}
             </div>
-            
+
             <div className="flex items-center text-sm text-muted-foreground">
               <Eye className="h-4 w-4 mr-1" />
-              {discussion.views || 0} views
+              {discussion.views || 0} Views
             </div>
           </div>
-          
+
           {/* Reaction button and popup */}
           <div className="relative">
             <div className="flex justify-between border-t pt-3">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-foreground"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={discussion.user_reaction ? "text-primary" : "text-muted-foreground hover:text-foreground"}
                       onClick={toggleReactionMenu}
                     >
                       {discussion.user_reaction ? (
@@ -634,21 +719,30 @@ const DiscussionCard = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Add your reaction</p>
+                    <p>{discussion.user_reaction ? "Change your reaction" : "Add your reaction"}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Reply
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-muted-foreground hover:text-foreground"
               >
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>
             </div>
-            
+
             {/* Reaction popup menu */}
             {reactionMenuOpen && (
               <div className="absolute left-0 bottom-14 bg-background border rounded-lg shadow-lg p-2 z-10">
@@ -656,8 +750,8 @@ const DiscussionCard = ({
                   {availableReactions.map((reaction) => (
                     <Button
                       key={reaction.emoji}
-                      variant="ghost"
-                      className="p-2 h-auto hover:bg-secondary"
+                      variant={discussion.user_reaction === reaction.emoji ? "secondary" : "ghost"}
+                      className={`p-2 h-auto ${discussion.user_reaction === reaction.emoji ? "bg-primary/20" : "hover:bg-secondary"}`}
                       onClick={() => handleReaction(discussion.id, reaction.emoji)}
                     >
                       <span className="text-xl" role="img" aria-label={reaction.name}>

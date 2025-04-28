@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { 
-  X,
+import {   X,
   Mail,
   Github,
   Facebook,
@@ -12,6 +11,11 @@ import {
   Lock,
   AtSign
 } from "lucide-react"
+import { useMutation } from '@tanstack/react-query'
+import { authService } from '@/apis/services/auth/auth.service'
+import { toast } from 'react-toastify'
+
+
 
 export function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [showEmailForm, setShowEmailForm] = useState(false)
@@ -20,16 +24,38 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
     email: '',
     username: '',
     password: ''
-  })
+  });
 
+ 
+const createUserMutation = useMutation({
+  mutationFn: async (userData: typeof formData) => {
+    const response = await authService.regieter({
+      first_name: userData.fullName,
+      email: userData.email,
+      username: userData.username,
+      password: userData.password,
+      groups: []
+    });
+    return response;
+  },
+  onSuccess: () => {
+    console.log('Account created successfully');
+    toast.success('Account created successfully, please login');
+    onClose();
+  },
+  onError: (error: Error) => {
+    console.error('Registration failed:', error.message);
+    toast.error('Registration failed, please try again');
+  }
+});
   const handleSocialLogin = (provider: string) => {
     console.log(`Logging in with ${provider}`)
   }
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    onClose()
+    console.log('Form submitted:', formData);
+    createUserMutation.mutate(formData);
   }
 
   return (
@@ -202,3 +228,5 @@ export function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
     </Dialog>
   )
 }
+
+

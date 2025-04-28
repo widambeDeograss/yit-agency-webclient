@@ -2,7 +2,7 @@ import {configureStore, combineReducers}from '@reduxjs/toolkit';
 import storage from 'redux-persist/lib/storage';
 import { persistReducer, persistStore } from 'redux-persist';
 import authSlice from './slices/auth/auth.slice';
-import { AuthState, UserInfo } from "./types/auth-state";
+import { AuthState } from "./types/auth-state";
 import { decryptData, encryptData } from "./slices/auth/encript-data";
 import {
   FLUSH,
@@ -13,6 +13,7 @@ import {
   REGISTER
 } from 'redux-persist';
 import accauntSlice from "./slices/account.slice";
+import { User } from '@/types/account';
 
 const persistConfig = {
   key: 'auth',
@@ -42,7 +43,7 @@ const persistConfig = {
             ? decryptData<string>(state?.tokens?.refresh)
             : null
         },
-        user: state.user ? decryptData<UserInfo>(state?.user) : null
+        user: state.user ? decryptData<User>(state?.user) : null
       })
     }
   ]
