@@ -18,14 +18,15 @@ import {
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BlobBackground } from "@/components/shared/blob-bg"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function AboutPage() {
   const teamMembers = [
-    { name: "Neema James", role: "CEO & Founder", image: "/api/placeholder/80/80" },
-    { name: "Stella Kaishe", role: "Finance Director & Co-Founder", image: "/api/placeholder/80/80" },
-    { name: "Innocent Ushaki", role: "Chief Operating Officer", image: "/api/placeholder/80/80" },
-    { name: "Frank Youze", role: "Chief Technology Officer", image: "/api/placeholder/80/80" },
-    { name: "Rebeca Joshua", role: "Marketing Director", image: "/api/placeholder/80/80" }
+    { name: "Neema James", fallback:"NJ", role: "CEO & Founder", image: "/api/placeholder/80/80" },
+    { name: "Stella Kaishe",fallback:"SK", role: "Finance Director & Co-Founder", image: "/api/placeholder/80/80" },
+    { name: "Innocent Ushaki",fallback:"IU", role: "Chief Operating Officer", image: "/api/placeholder/80/80" },
+    { name: "Frank Youze",fallback:"FY", role: "Chief Technology Officer", image: "/api/placeholder/80/80" },
+    { name: "Rebeca Joshua", fallback:"RJ",role: "Marketing Director", image: "/api/placeholder/80/80" }
   ]
 
   const sdgGoals = [
@@ -202,13 +203,10 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {teamMembers.map((member, index) => (
               <div key={index} className="bg-card border border-border p-4 rounded-xl text-center shadow-md">
-                <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 bg-primary/10">
-                  <img 
-                    src={member.image} 
-                    alt={member.name} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              <Avatar className="w-16 h-16 mx-auto">
+                  <AvatarImage src="/api/placeholder/96/96" alt="Neema James" />
+                  <AvatarFallback>{member.fallback}</AvatarFallback>
+                </Avatar>
                 <h3 className="font-semibold">{member.name}</h3>
                 <p className="text-sm text-muted-foreground">{member.role}</p>
               </div>
