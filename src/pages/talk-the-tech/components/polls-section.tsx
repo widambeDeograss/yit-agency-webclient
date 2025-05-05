@@ -27,6 +27,7 @@ const Polls = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
   
   const { 
     data: pollsData, 
@@ -38,7 +39,6 @@ const Polls = () => {
     queryFn: () => pollsService.getPolls({ 
       page: currentPage,
       search: searchQuery,
-      // category: selectedCategory 
     }),
   });
 

@@ -6,7 +6,7 @@ class PollsService extends APIClient {
         super('baseService');
     }
 
-    getPolls(params?: { page?: number; size?: number; search?: string }) {
+    getPolls(params?: { page?: number; size?: number; search?: string, }) {
         return this.get<TechPollApiResponse>('/polls/polls/', params);
     }
 

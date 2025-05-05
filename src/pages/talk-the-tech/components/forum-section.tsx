@@ -65,6 +65,7 @@ const Forums = () => {
   const { isAuthenticated } = useAuthStore();
   const dispatch = useAppDispatch();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [following, setFollowing] = useState(false);
 
   React.useEffect(() => {
     const handler = setTimeout(() => {
@@ -88,6 +89,8 @@ const Forums = () => {
       search: debouncedQuery,
       page: currentPage,
       size: 10,
+      category: selectedCategory ,
+      followed_by: following ? "me" : "",
     }),
   });
 
@@ -200,7 +203,23 @@ const Forums = () => {
                 >
                   <Clock className="h-4 w-4 mr-2" /> Recent
                 </Button>
-                <Button variant="outline" size="sm" className="justify-start">
+                <Button 
+                 variant={sortBy === 'me' ? "default" : "outline"} 
+                size="sm" className="justify-start"
+                
+                  onClick={() => {
+               if (isAuthenticated) {
+                    setFollowing(!following);
+                    setSortBy('me');
+                    setCurrentPage(1);
+                  }
+                  else {
+                    dispatch(SetOpenLogin(true));
+                  }
+                
+               }
+                  }
+                >
                   <Star className="h-4 w-4 mr-2 text-primary" /> Following
                 </Button>
                 <Button variant="outline" size="sm" className="justify-start">

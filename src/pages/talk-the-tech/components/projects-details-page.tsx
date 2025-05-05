@@ -76,11 +76,32 @@ const ProjectDetails = () => {
     navigate(`/projects?category=${categoryId}`);
   };
 
-  const handleShareProject = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    // Show toast notification
-    alert('Project URL copied to clipboard!');
+  const handleShareProject = async () => {
+    const shareText = `Check out this project: ${project?.title}\n${window.location.href}`;
+  
+    // Try Web Share API first (won't work on Ubuntu/Chrome)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: project?.title,
+          text: `Check out this project: ${project?.title}`,
+          url: window.location.href,
+        });
+        return; // Success, exit early
+      } catch (err) {
+        console.log("Web Share failed, falling back to clipboard");
+      }
+    }
+  
+    // Fallback: Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      // Show a toast/notification (example using a simple alert)
+      alert("Link copied to clipboard! 🎉"); // Replace with a proper toast
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      alert("Could not copy link. Please try manually."); // Fallback for clipboard errors
+    }
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -100,6 +121,7 @@ const ProjectDetails = () => {
       console.error('Failed to post comment:', error);
     }
   };
+
 
   if (isLoading) {
     return <ProjectDetailsSkeleton />;
@@ -130,9 +152,9 @@ const ProjectDetails = () => {
             variant="ghost" 
             size="sm" 
             className="mb-4" 
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/tet')}
           >
-            <ChevronLeft className="h-4 w-4 mr-1" /> Back to Projects
+            <ChevronLeft className="h-4 w-4 mr-1" /> Back
           </Button>
 
           <form onSubmit={handleSearch} className="mb-6">
@@ -326,16 +348,6 @@ const ProjectDetails = () => {
                     </div>
                   </div>
                   
-                  {/* Project Timeline */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Project Timeline</h3>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>
-                      <span className="mx-2">•</span>
-                      <span>Last updated: {new Date(project.updated_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
                 </div>
               </TabsContent>
               
@@ -409,7 +421,7 @@ const ProjectDetails = () => {
           </div>
         </div>
         
-        {/* Project Stats */}
+        {/* Project Stats
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           <div className="bg-card rounded-xl p-4 shadow-sm border border-border/50 flex items-center">
             <Star className="h-6 w-6 text-yellow-500 mr-3" />
@@ -426,7 +438,7 @@ const ProjectDetails = () => {
             </div>
           </div>
          
-        </div>
+        </div> */}
       </div>
     </div>
 

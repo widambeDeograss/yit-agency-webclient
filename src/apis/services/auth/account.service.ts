@@ -82,6 +82,20 @@ class AccountService extends APIClient {
     return this.delete('/accounts/profile/');
   }
 
+  // Get bookmarks
+  getBookmarks() {
+    return this.get('/accounts/bookmarks/');
+  }
+
+  // Add bookmark
+  addBookmark(data: any) {
+    return this.post('/accounts/bookmarks/', data);
+  }
+
+  toogleBookMark(data:any){
+    return this.post('/accounts/bookmarks/toggle/', data);
+  }
+
  // Subscription Endpoints
   subscribeToNewsletter() {
     return this.post('/newsletters/subscriptions/');

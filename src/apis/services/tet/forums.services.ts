@@ -10,7 +10,7 @@ class ForumsService extends APIClient {
         }
 
         // Get all Forums IDs with pagination
-        getForums(params?: { page?: number; size?: number, search?: string, active?: boolean }) {
+        getForums(params?: { page?: number; size?: number, search?: string, active?: boolean, category?: any , followed_by: string }) {
                 return this.get<ForumApiResponse>('/forums/forums/', params);
         }
 

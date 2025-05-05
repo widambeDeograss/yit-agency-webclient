@@ -51,6 +51,7 @@ export function Hero() {
             </Button>
           </div>
         </div>
+        
 
         {/* Right Card with Community Images */}
         <div className="hidden md:block relative z-10 mt-12 md:mt-0">
