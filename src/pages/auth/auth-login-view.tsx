@@ -10,9 +10,11 @@ import {
   ChevronLeft,
   User,
   Lock,
-  AtSign
+  AtSign,
+  LoaderCircle
 } from "lucide-react"
 import { useAuth } from '@/hooks/use-api-auth'
+import { toast } from 'react-toastify'
 
 export function AuthLoginModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -22,10 +24,10 @@ export function AuthLoginModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
     password: ''
   })
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Logging in with ${provider}`)
-    
-  }
+ const handleSocialLogin = (provider: string) => {
+    console.log(`Logging in with ${provider}`);
+    toast.info(`Logging in with ${provider} ... not available yet`);
+  };
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,7 +45,7 @@ export function AuthLoginModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
           <div className="hidden md:block w-1/2 bg-gradient-to-br from-primary to-primary/90 relative">
             <div className="h-full p-8 text-white">
               <div className="relative h-full flex flex-col justify-between">
-                <h2 className="text-3xl font-bold">Join 50,000+ Tech Enthusiasts</h2>
+                <h2 className="text-3xl font-bold">Join 5,000+ Tech Enthusiasts</h2>
                 <div className="space-y-6">
                   <p className="text-xl leading-relaxed">
                     Collaborate, learn and grow with Africa's fastest-growing tech community
@@ -60,16 +62,7 @@ export function AuthLoginModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
 
           {/* Right Side - Auth Content */}
           <div className="w-full md:w-1/2 p-8 md:p-12">
-            <DialogHeader className="text-right">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose}
-                className="absolute top-4 right-4 text-muted-foreground hover:bg-primary/10"
-              >
-                <X className="h-6 w-6" />
-              </Button>
-            </DialogHeader>
+        
 
             <div className="max-w-xl mx-auto space-y-8">
               {showEmailForm ? (
@@ -121,18 +114,22 @@ export function AuthLoginModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                       type="submit" 
                       className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-lg font-medium"
                       disabled={loginUser.isPending}
+                      
                     >
                         {loginUser.isPending && (
-                          <div className="animate-spin h-5 w-5 border-2 border-t-transparent rounded-full border-primary/50 mr-2"></div>
+                        <>
+                        <LoaderCircle className='animate animate-spin'/>
+                        </>
                         )}
-                      Create Account
+                      {loginUser.isPending ? 'Logging in...' : 'Login'}
+                  
                     </Button>
                   </form>
                 </>
               ) : (
                 <>
                   <div className="text-center space-y-2">
-                    <h3 className="text-3xl font-bold">Welcome to Talk the Tech</h3>
+                    <h3 className="text-3xl font-bold">Welcome to YIT</h3>
                     <p className="text-lg text-muted-foreground">Join the largest tech community in East Africa</p>
                   </div>
                   

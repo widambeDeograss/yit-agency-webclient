@@ -29,7 +29,16 @@ export interface Blog extends BaseEntity {
     views: number;
     deleted: boolean;
     draft: boolean;
-    user_reaction?: ReactionType | null; // Optional for frontend use
+    user_reaction?: ReactionType | null;
+    bookmark_status?: {
+        is_bookmarked: boolean;
+        bookmark?: {
+          id: number;
+          notes: string | null;
+          folder: number | null;
+          created_at: string;
+        };
+      }; 
 }
 
 export interface Reaction extends BaseEntity {

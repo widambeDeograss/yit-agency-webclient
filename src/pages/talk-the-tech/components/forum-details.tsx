@@ -1,11 +1,23 @@
-import React, { FormEventHandler, useState, useEffect, use } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { FormEventHandler, useState, useEffect, use } from "react";
+import { useParams, Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   MessageSquare,
@@ -23,7 +35,8 @@ import {
   AlertCircle,
   Flame,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserCheck,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,22 +52,23 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { forumsService } from '@/apis/services/tet/forums.services';
-import { useAuthStore } from '@/hooks/use-auth-store';
-import { useAppDispatch } from '@/store/store-hooks';
-import { SetOpenLogin } from '@/store/slices/auth/auth.slice';
-import { Discussion } from '@/types/tet-forums';
-import { toast } from 'react-toastify';
-import DiscussionForm from './new-forum-discussion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { forumsService } from "@/apis/services/tet/forums.services";
+import { useAuthStore } from "@/hooks/use-auth-store";
+import { useAppDispatch } from "@/store/store-hooks";
+import { SetOpenLogin } from "@/store/slices/auth/auth.slice";
+import { Discussion } from "@/types/tet-forums";
+import { toast } from "react-toastify";
+import DiscussionForm from "./new-forum-discussion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import { accountService } from "@/apis/services/auth/account.service";
 
 const ForumDetailsPage = () => {
   const { id: forumId } = useParams();
   const [activeTab, setActiveTab] = useState("discussions");
-  const { isAuthenticated,user } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const [following, setFollowing] = useState(false);
@@ -64,24 +78,26 @@ const ForumDetailsPage = () => {
 
   // Query for forum details
   const { data: forum, isLoading: loadingForum } = useQuery({
-    queryKey: ['forum', forumId],
+    queryKey: ["forum", forumId],
     queryFn: () => forumsService.getForumById(forumId),
   });
 
   // Query for discussion list
   const { data: discussions, isLoading: loadingDiscussions } = useQuery({
-    queryKey: ['discussions', forumId, currentPage],
-    queryFn: () => forumsService.forumDiscussions(forumId, { page: currentPage }),
+    queryKey: ["discussions", forumId, currentPage],
+    queryFn: () =>
+      forumsService.forumDiscussions(forumId, { page: currentPage }),
   });
 
   // Check forum follow status when authenticated
   useEffect(() => {
     if (isAuthenticated && forumId) {
-      forumsService.checkForumFollowStatus(forumId)
-        .then(data => {
+      forumsService
+        .checkForumFollowStatus(forumId)
+        .then((data) => {
           setFollowing(data.is_following);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Error checking follow status:", error);
         });
     }
@@ -92,69 +108,63 @@ const ForumDetailsPage = () => {
     mutationFn: () => forumsService.followForum(forumId),
     onSuccess: () => {
       setFollowing(true);
-      toast.info("You are now following this forum",
-      );
-      queryClient.invalidateQueries({ queryKey: ['forum', forumId] });
+      toast.info("You are now following this forum");
+      queryClient.invalidateQueries({ queryKey: ["forum", forumId] });
     },
     onError: (error) => {
       console.error("Error following forum:", error);
-      toast.error("Failed to follow forum. Please try again.",
-      );
-    }
+      toast.error("Failed to follow forum. Please try again.");
+    },
   });
 
   const unfollowMutation = useMutation({
     mutationFn: () => forumsService.unfollowForum(forumId),
     onSuccess: () => {
       setFollowing(false);
-      toast.info("You have unfollowed this forum",
-      );
-      queryClient.invalidateQueries({ queryKey: ['forum', forumId] });
+      toast.info("You have unfollowed this forum");
+      queryClient.invalidateQueries({ queryKey: ["forum", forumId] });
     },
     onError: (error) => {
       console.error("Error unfollowing forum:", error);
       toast.error("Failed to unfollow forum. Please try again.");
-    }
+    },
   });
 
   // Mutation for creating discussions
   const createDiscussionMutation = useMutation({
-    mutationFn: (newDiscussion: { title: string; content: string }) => forumsService.createDiscussion(forumId, 
-      {
+    mutationFn: (newDiscussion: { title: string; content: string }) =>
+      forumsService.createDiscussion(forumId, {
         ...newDiscussion,
-        "forum": forumId,
-        "author": user?.id,
-
-      }
-    ),
+        forum: forumId,
+        author: user?.id,
+      }),
     onSuccess: () => {
       setCreateDiscussionOpen(false);
-      toast.success("Discussion created successfully",
-      );
-      queryClient.invalidateQueries({ queryKey: ['discussions', forumId] });
+      toast.success("Discussion created successfully");
+      queryClient.invalidateQueries({ queryKey: ["discussions", forumId] });
     },
     onError: (error) => {
       console.error("Error creating discussion:", error);
       toast.error("Failed to create discussion. Please try again.");
-    }
+    },
   });
 
   // Mutations for discussion reactions
   const addReactionMutation = useMutation({
     mutationFn: ({ discussionId, reaction }: any) => {
       return forumsService.createForumReaction(discussionId, {
-        "reaction": reaction,
+        reaction: reaction,
       });
     },
     onSuccess: (data, variables) => {
       toast.success(`You reacted to the discussion with ${variables.reaction}`);
       setReactionMenuOpen(null);
-      queryClient.invalidateQueries({ queryKey: ['discussions', forumId] });
+      queryClient.invalidateQueries({ queryKey: ["discussions", forumId] });
     },
     onError: (error) => {
       console.error("Error adding reaction:", error);
       toast("Failed to add reaction. Please try again.");
-    }
+    },
   });
 
   const removeReactionMutation = useMutation({
@@ -163,12 +173,12 @@ const ForumDetailsPage = () => {
     },
     onSuccess: () => {
       toast.info("Your reaction has been removed");
-      queryClient.invalidateQueries({ queryKey: ['discussions', forumId] });
+      queryClient.invalidateQueries({ queryKey: ["discussions", forumId] });
     },
     onError: (error) => {
       console.error("Error removing reaction:", error);
       toast.error("Failed to remove reaction. Please try again.");
-    }
+    },
   });
 
   const handleLoginModal = () => {
@@ -188,8 +198,10 @@ const ForumDetailsPage = () => {
     }
   };
 
-  const handleCreateDiscussion = async (newDiscussion: { title: string; content: string }) => {
-  
+  const handleCreateDiscussion = async (newDiscussion: {
+    title: string;
+    content: string;
+  }) => {
     if (!newDiscussion.title.trim() || !newDiscussion.content.trim()) {
       toast.info("Please provide both title and content");
       return;
@@ -198,14 +210,14 @@ const ForumDetailsPage = () => {
     createDiscussionMutation.mutate(newDiscussion);
   };
 
-   const handleReaction = async (discussionId: number, reaction: string) => {
+  const handleReaction = async (discussionId: number, reaction: string) => {
     if (!isAuthenticated) {
       handleLoginModal();
       return;
     }
 
     // Find the discussion to check if user already reacted
-    const discussion = discussions?.results.find(d => d.id === discussionId);
+    const discussion = discussions?.results.find((d) => d.id === discussionId);
 
     if (discussion?.user_reaction === reaction) {
       // User clicked the same reaction again, so remove it
@@ -216,6 +228,35 @@ const ForumDetailsPage = () => {
     }
 
     setReactionMenuOpen(null);
+  };
+
+
+  const handleShareProject = async () => {
+    const shareText = `Check out this FORUM: ${forum?.title}\n${window.location.href}`;
+  
+    // Try Web Share API first (won't work on Ubuntu/Chrome)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: forum?.title,
+          text: `Check out this FORUM: ${forum?.title}`,
+          url: window.location.href,
+        });
+        return; // Success, exit early
+      } catch (err) {
+        console.log("Web Share failed, falling back to clipboard");
+      }
+    }
+  
+    // Fallback: Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      // Show a toast/notification (example using a simple alert)
+      toast.info("Link copied to clipboard! 🎉"); // Replace with a proper toast
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toast.info("Could not copy link. Please try manually."); // Fallback for clipboard errors
+    }
   };
 
   const goToNextPage = () => {
@@ -230,6 +271,24 @@ const ForumDetailsPage = () => {
     }
   };
 
+  const {mutate:toogleBookMark, isPending:loadingBookMark} = useMutation({
+    mutationFn: () => {
+      return accountService.toogleBookMark({
+        content_type: 'forum',
+      object_id: forumId,
+      bookmark_type: 'forum'
+      });
+    },
+    onSuccess: () => {
+      toast.success("Forum bookmarked successfully");
+      queryClient.invalidateQueries({ queryKey: ["forum", forumId] });
+    },
+    onError: (error) => {
+      console.error("Error bookmarking forum:", error);
+      toast.error("Failed to bookmark forum. Please try again.");
+    },
+  });
+
   // Loading skeleton
   if (loadingForum || loadingDiscussions) {
     return (
@@ -240,7 +299,7 @@ const ForumDetailsPage = () => {
           <div>
             <Skeleton className="h-64 w-full mb-6" />
             <div className="space-y-4">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-40 w-full" />
               ))}
             </div>
@@ -255,7 +314,9 @@ const ForumDetailsPage = () => {
       <div className="container mx-auto px-4 py-16 text-center">
         <AlertCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
         <h2 className="text-2xl font-bold mb-2">Forum Not Found</h2>
-        <p className="text-muted-foreground mb-6">The forum you're looking for doesn't exist or has been removed.</p>
+        <p className="text-muted-foreground mb-6">
+          The forum you're looking for doesn't exist or has been removed.
+        </p>
         <Button asChild>
           <Link to="/forums">Back to Forums</Link>
         </Button>
@@ -265,20 +326,23 @@ const ForumDetailsPage = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     }).format(date);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 ">
       {/* Breadcrumb */}
       <div className="flex items-center mb-6 text-sm text-muted-foreground">
-        <Link to="/forums" className="flex items-center hover:text-primary transition-colors">
+        <Link
+          to="/tet"
+          className="flex items-center hover:text-primary transition-colors"
+        >
           <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Forums
+          Back
         </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{forum.title}</span>
@@ -290,7 +354,10 @@ const ForumDetailsPage = () => {
           <div className="flex items-center">
             <h1 className="text-3xl font-bold mr-3">{forum.title}</h1>
             {forum.is_public ? null : (
-              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500">
+              <Badge
+                variant="outline"
+                className="bg-yellow-500/10 text-yellow-500"
+              >
                 <Lock className="h-3 w-3 mr-1" /> Private
               </Badge>
             )}
@@ -305,36 +372,62 @@ const ForumDetailsPage = () => {
             >
               {following ? (
                 <>
-                  <BookmarkCheck className="h-4 w-4 mr-1" />
+                  <UserCheck className="h-4 w-4 mr-1" />
                   Following
                 </>
               ) : (
                 <>
-                  <Bookmark className="h-4 w-4 mr-1" />
+                  <User className="h-4 w-4 mr-1" />
                   Follow
                 </>
               )}
             </Button>
+            <Button variant="outline" size="sm"
+                 onClick={() =>  {
+                  if (!isAuthenticated) {
+                    handleLoginModal();
+                    return;
+                  }else{
+                    toogleBookMark()
+                  }
+                 }}
+                 disabled={loadingBookMark}
+            >
+           {
+            forum.bookmark_status?.is_bookmarked ? (
+              <>
+              <BookmarkCheck className="h-4 w-4 mr-1" />
+              Saved
+              </>
+            ): (
+              <>
+                 <Bookmark className="h-4 w-4 mr-1" />
+                 Save
+              </>
+            )
+           }
+            </Button>
 
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm"
+            onClick={handleShareProject}
+            >
               <Share2 className="h-4 w-4 mr-1" />
               Share
             </Button>
           </div>
         </div>
 
-       <ReactMarkdown
-       
-       >
-       {forum.description}
-       </ReactMarkdown>
+        <ReactMarkdown>{forum.description}</ReactMarkdown>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {forum.category &&
-            <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary">
+          {forum.category && (
+            <Badge
+              variant="outline"
+              className="hover:bg-primary/10 hover:text-primary"
+            >
               #{forum.category.name}
             </Badge>
-          }
+          )}
         </div>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -374,9 +467,19 @@ const ForumDetailsPage = () => {
               {!discussions?.results || discussions.results.length === 0 ? (
                 <Card className="text-center py-12">
                   <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No discussions yet</h3>
-                  <p className="text-muted-foreground mb-6">Be the first to start a discussion in this forum!</p>
-                  <Button onClick={() => isAuthenticated ? setCreateDiscussionOpen(true) : handleLoginModal()}>
+                  <h3 className="text-xl font-semibold mb-2">
+                    No discussions yet
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Be the first to start a discussion in this forum!
+                  </p>
+                  <Button
+                    onClick={() =>
+                      isAuthenticated
+                        ? setCreateDiscussionOpen(true)
+                        : handleLoginModal()
+                    }
+                  >
                     <PlusCircle className="h-4 w-4 mr-2" />
                     New Discussion
                   </Button>
@@ -431,7 +534,8 @@ const ForumDetailsPage = () => {
             </TabsContent>
 
             <TabsContent value="pinned" className="mt-0">
-              {forum.pinned_discussions && forum.pinned_discussions.length > 0 ? (
+              {forum.pinned_discussions &&
+              forum.pinned_discussions.length > 0 ? (
                 <div className="space-y-4">
                   {forum.pinned_discussions.map((discussion) => (
                     <DiscussionCard
@@ -448,8 +552,12 @@ const ForumDetailsPage = () => {
               ) : (
                 <Card className="text-center py-12">
                   <Pin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No pinned discussions</h3>
-                  <p className="text-muted-foreground">Moderators can pin important discussions here.</p>
+                  <h3 className="text-xl font-semibold mb-2">
+                    No pinned discussions
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Moderators can pin important discussions here.
+                  </p>
                 </Card>
               )}
             </TabsContent>
@@ -458,8 +566,12 @@ const ForumDetailsPage = () => {
               {!discussions?.results || discussions.results.length === 0 ? (
                 <Card className="text-center py-12">
                   <Flame className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No popular discussions yet</h3>
-                  <p className="text-muted-foreground">Popular discussions will appear here.</p>
+                  <h3 className="text-xl font-semibold mb-2">
+                    No popular discussions yet
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Popular discussions will appear here.
+                  </p>
                 </Card>
               ) : (
                 <div className="space-y-4">
@@ -481,17 +593,18 @@ const ForumDetailsPage = () => {
                 </div>
               )}
             </TabsContent>
-
-
           </Tabs>
-
-
         </div>
-        {
-          isAuthenticated ? <DiscussionForm onSubmit={handleCreateDiscussion} onCancel={function (): void {
-            throw new Error('Function not implemented.');
-          }} isPending={createDiscussionMutation.isPending}
-          /> : <Button
+        {isAuthenticated ? (
+          <DiscussionForm
+            onSubmit={handleCreateDiscussion}
+            onCancel={function (): void {
+              throw new Error("Function not implemented.");
+            }}
+            isPending={createDiscussionMutation.isPending}
+          />
+        ) : (
+          <Button
             onClick={() => {
               if (!isAuthenticated) {
                 handleLoginModal();
@@ -503,8 +616,7 @@ const ForumDetailsPage = () => {
             <PlusCircle className="h-4 w-4 mr-2" />
             New Discussion
           </Button>
-        }
-
+        )}
       </div>
     </div>
   );
@@ -518,7 +630,7 @@ const DiscussionCard = ({
   setReactionMenuOpen,
   isAuthenticated,
   pinned = false,
-  popular = false
+  popular = false,
 }: {
   discussion: Discussion;
   handleReaction: (discussionId: number, reaction: string) => void;
@@ -530,30 +642,30 @@ const DiscussionCard = ({
 }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     }).format(date);
   };
 
   const truncateContent = (content: any, maxLength = 150) => {
-    if (!content) return '';
+    if (!content) return "";
     if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + '...';
+    return content.substring(0, maxLength) + "...";
   };
 
   // Available reactions based on the REACTION_CHOICES from the model
   const availableReactions = [
-    { emoji: '👍', name: 'Thumbs Up', key: 'thumbs_up' },
-    { emoji: '👎', name: 'Thumbs Down', key: 'thumbs_down' },
-    { emoji: '❤️', name: 'Heart', key: 'heart' },
-    { emoji: '🚀', name: 'Rocket', key: 'rocket' },
-    { emoji: '👀', name: 'Eyes', key: 'eyes' },
-    { emoji: '🔥', name: 'Fire', key: 'fire' },
-    { emoji: '🎉', name: 'Party Popper', key: 'party' },
-    { emoji: '👏', name: 'Clap', key: 'clap' },
-    { emoji: '🤔', name: 'Thinking Face', key: 'thinking' }
+    { emoji: "👍", name: "Thumbs Up", key: "thumbs_up" },
+    { emoji: "👎", name: "Thumbs Down", key: "thumbs_down" },
+    { emoji: "❤️", name: "Heart", key: "heart" },
+    { emoji: "🚀", name: "Rocket", key: "rocket" },
+    { emoji: "👀", name: "Eyes", key: "eyes" },
+    { emoji: "🔥", name: "Fire", key: "fire" },
+    { emoji: "🎉", name: "Party Popper", key: "party" },
+    { emoji: "👏", name: "Clap", key: "clap" },
+    { emoji: "🤔", name: "Thinking Face", key: "thinking" },
   ];
 
   const getTotalReactions = () => {
@@ -573,7 +685,7 @@ const DiscussionCard = ({
     const reactionCounts: Record<string, number> = {};
 
     if (discussion.reactions && discussion.reactions.length > 0) {
-      discussion.reactions.forEach(reaction => {
+      discussion.reactions.forEach((reaction) => {
         if (!reactionCounts[reaction.reaction]) {
           reactionCounts[reaction.reaction] = 0;
         }
@@ -590,10 +702,14 @@ const DiscussionCard = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarFallback>{discussion.author?.username?.charAt(0) || 'U'}</AvatarFallback>
+              <AvatarFallback>
+                {discussion.author?.username?.charAt(0) || "U"}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <span className="font-medium">{discussion.author?.username || 'Unknown'}</span>
+              <span className="font-medium">
+                {discussion.author?.username || "Unknown"}
+              </span>
               <div className="text-xs text-muted-foreground">
                 {formatDate(discussion.created_at)}
               </div>
@@ -612,7 +728,10 @@ const DiscussionCard = ({
               </Badge>
             )}
             {popular && (
-              <Badge variant="outline" className="bg-orange-500/10 text-orange-500">
+              <Badge
+                variant="outline"
+                className="bg-orange-500/10 text-orange-500"
+              >
                 <Flame className="h-3 w-3 mr-1" /> Hot
               </Badge>
             )}
@@ -625,14 +744,6 @@ const DiscussionCard = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Options</DropdownMenuLabel>
-                <DropdownMenuItem>
-                  <Bookmark className="h-4 w-4 mr-2" />
-                  Save
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-500">
                   <AlertCircle className="h-4 w-4 mr-2" />
@@ -650,12 +761,12 @@ const DiscussionCard = ({
             {discussion.title}
           </h3>
           <p className="text-muted-foreground mb-4">
-                  <ReactMarkdown 
-                         remarkPlugins={[remarkGfm]}
-             rehypePlugins={[rehypeHighlight]}
-                         >
-                           {discussion.content}
-                         </ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+            >
+              {discussion.content}
+            </ReactMarkdown>
           </p>
         </Link>
       </CardContent>
@@ -688,13 +799,15 @@ const DiscussionCard = ({
                   </div>
                 </div>
               ) : (
-                <span className="text-sm text-muted-foreground">No reactions yet</span>
+                <span className="text-sm text-muted-foreground">
+                  No reactions yet
+                </span>
               )}
             </div>
 
             <div className="flex items-center text-sm text-muted-foreground">
               <Eye className="h-4 w-4 mr-1" />
-              {discussion.views || 0} Views
+              { getTotalReactions() || 0} reactions
             </div>
           </div>
 
@@ -707,11 +820,17 @@ const DiscussionCard = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={discussion.user_reaction ? "text-primary" : "text-muted-foreground hover:text-foreground"}
+                      className={
+                        discussion.user_reaction
+                          ? "text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }
                       onClick={toggleReactionMenu}
                     >
                       {discussion.user_reaction ? (
-                        <span className="mr-2 text-lg">{discussion.user_reaction}</span>
+                        <span className="mr-2 text-lg">
+                          {discussion.user_reaction}
+                        </span>
                       ) : (
                         <span className="mr-2">😃</span>
                       )}
@@ -719,28 +838,25 @@ const DiscussionCard = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{discussion.user_reaction ? "Change your reaction" : "Add your reaction"}</p>
+                    <p>
+                      {discussion.user_reaction
+                        ? "Change your reaction"
+                        : "Add your reaction"}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Reply
-              </Button>
+              </Button> */}
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
+             
             </div>
 
             {/* Reaction popup menu */}
@@ -750,11 +866,25 @@ const DiscussionCard = ({
                   {availableReactions.map((reaction) => (
                     <Button
                       key={reaction.emoji}
-                      variant={discussion.user_reaction === reaction.emoji ? "secondary" : "ghost"}
-                      className={`p-2 h-auto ${discussion.user_reaction === reaction.emoji ? "bg-primary/20" : "hover:bg-secondary"}`}
-                      onClick={() => handleReaction(discussion.id, reaction.emoji)}
+                      variant={
+                        discussion.user_reaction === reaction.emoji
+                          ? "secondary"
+                          : "ghost"
+                      }
+                      className={`p-2 h-auto ${
+                        discussion.user_reaction === reaction.emoji
+                          ? "bg-primary/20"
+                          : "hover:bg-secondary"
+                      }`}
+                      onClick={() =>
+                        handleReaction(discussion.id, reaction.emoji)
+                      }
                     >
-                      <span className="text-xl" role="img" aria-label={reaction.name}>
+                      <span
+                        className="text-xl"
+                        role="img"
+                        aria-label={reaction.name}
+                      >
                         {reaction.emoji}
                       </span>
                     </Button>

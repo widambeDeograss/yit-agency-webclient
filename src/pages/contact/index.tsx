@@ -29,6 +29,7 @@ import {
 import { useState } from "react"
 import { BlobBackground } from "@/components/shared/blob-bg"
 import qr from "@/assets/yit-qr.png"
+import { useNavigate } from "react-router-dom"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -37,6 +38,7 @@ export default function ContactPage() {
     subject: "",
     message: ""
   });
+  const navigate = useNavigate();
 
   const handleChange = (e:any) => {
     const { name, value } = e.target;
@@ -123,8 +125,8 @@ export default function ContactPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <a href="tel:+255768001552" className="text-primary hover:underline">
-                  +255 768 001 552
+                <a href="tel:+255624964962" className="text-primary hover:underline">
+                  +255 624 964 962
                 </a>
               </CardContent>
             </Card>
@@ -230,18 +232,16 @@ export default function ContactPage() {
                     />
                   </div>
                   <p className="text-center text-lg font-medium mb-2">SCAN ME</p>
-                  <a 
-                    href="https://shorturl.at/iR9A5" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center"
-                  >
-                    <LinkIcon className="h-4 w-4 mr-1" /> https://shorturl.at/iR9A5
-                  </a>
+
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full bg-primary hover:bg-primary/90">
-                    Join us now
+                  <Button className="w-full bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    window.open("https://shorturl.at/iR9A5", "_blank");
+                  }
+                }
+                  >
+                     <LinkIcon className="h-4 w-4 mr-1" /> Join us now
                   </Button>
                 </CardFooter>
               </Card>
@@ -274,7 +274,7 @@ export default function ContactPage() {
       </section>
 
       {/* Upcoming Events */}
-      <section className="py-16 bg-primary/5 relative z-10">
+      {/* <section className="py-16 bg-primary/5 relative z-10">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-3xl font-bold mb-4">Upcoming Events</h2>
@@ -319,7 +319,7 @@ export default function ContactPage() {
             </Card>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* FAQs */}
       <section className="py-16 relative z-10">
@@ -360,7 +360,7 @@ export default function ContactPage() {
               Join Our Community
             </Button>
             <Button variant="outline" className="px-8 py-6 text-lg">
-              Contact Us <ArrowRight className="ml-2 h-5 w-5" />
+              Learn more <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         </div>

@@ -29,6 +29,7 @@ class BlogsService extends APIClient {
         search?: string;
         categories?: number[];
         author?: number;
+        bookmarked?:boolean;
         ordering?: '-published_at' | '-created_at' | '-views';
     }) {
         return this.get<BlogApiResponse>('/blogs/blogs/', params);

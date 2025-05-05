@@ -27,6 +27,7 @@ import { useAuthStore } from '@/hooks/use-auth-store';
 import { useAppDispatch } from '@/store/store-hooks';
 import { SetOpenLogin } from '@/store/slices/auth/auth.slice';
 import { projectsService } from '@/apis/services/tet/projects.service';
+import { toast } from 'react-toastify';
 
 const ProjectDetails = () => {
   const { id:projectId } = useParams();
@@ -97,10 +98,10 @@ const ProjectDetails = () => {
     try {
       await navigator.clipboard.writeText(shareText);
       // Show a toast/notification (example using a simple alert)
-      alert("Link copied to clipboard! 🎉"); // Replace with a proper toast
+      toast.info("Link copied to clipboard! 🎉"); // Replace with a proper toast
     } catch (err) {
       console.error("Failed to copy:", err);
-      alert("Could not copy link. Please try manually."); // Fallback for clipboard errors
+      toast.info("Could not copy link. Please try manually."); // Fallback for clipboard errors
     }
   };
 

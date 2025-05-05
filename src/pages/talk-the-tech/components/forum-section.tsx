@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   Star,
@@ -19,27 +17,25 @@ import {
   PieChart,
   FileText,
   Search,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw,
   AlertCircle,
   Menu,
+  X
 } from 'lucide-react';
-import { any } from 'zod';
 import { forumsService } from '@/apis/services/tet/forums.services';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useAppDispatch } from '@/store/store-hooks';
 import { SetOpenLogin } from '@/store/slices/auth/auth.slice';
 import CreateForumModal from './create-forum';
 
-const SidebarSection = ({ title, children }: any) => (
+const SidebarSection = ({ title, children }:any) => (
   <div className="bg-card rounded-lg p-4 border border-border">
     <h3 className="font-medium text-sm mb-3">{title}</h3>
     <div className="space-y-2">{children}</div>
   </div>
 );
 
-const CategoryButton = ({ icon, label, count, active, onClick }: any) => (
+const CategoryButton = ({ icon, label, count, active, onClick }:any) => (
   <Button
     variant={active ? "default" : "ghost"}
     className={`w-full justify-between text-sm font-normal px-2 py-1.5 h-auto ${active ? '' : 'hover:bg-primary/5'}`}
@@ -47,12 +43,21 @@ const CategoryButton = ({ icon, label, count, active, onClick }: any) => (
   >
     <div className="flex items-center">
       {icon}
-      <span className="truncate">{label}</span>
+      <span className="ml-2 truncate">{label}</span>
     </div>
     <Badge variant={active ? "default" : "outline"} className="ml-2">
       {count}
     </Badge>
   </Button>
+);
+
+const FilterBadge = ({ label, onClear }:any) => (
+  <Badge variant="outline" className="flex items-center gap-1 bg-primary/5 text-primary">
+    {label}
+    <button onClick={onClear} className="ml-1 hover:bg-primary/10 rounded-full">
+      <X className="h-3 w-3" />
+    </button>
+  </Badge>
 );
 
 const Forums = () => {
@@ -61,13 +66,17 @@ const Forums = () => {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState<number>();
+  const [selectedCategory, setSelectedCategory] = useState();
   const { isAuthenticated } = useAuthStore();
   const dispatch = useAppDispatch();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [following, setFollowing] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    following: false,
+    bookmarked: false
+  });
 
-  React.useEffect(() => {
+  // Handle search input debouncing
+  useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       setCurrentPage(1);
@@ -78,19 +87,25 @@ const Forums = () => {
     };
   }, [searchQuery]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilters.following, activeFilters.bookmarked, selectedCategory, sortBy]);
+
   const { 
     data: forumsData, 
     isLoading: forumsLoading, 
     error: forumsError,
     refetch: refetchForums 
   } = useQuery({
-    queryKey: ['forums', currentPage, sortBy, debouncedQuery, selectedCategory],
+    queryKey: ['forums', currentPage, sortBy, debouncedQuery, selectedCategory, activeFilters],
     queryFn: () => forumsService.getForums({
       search: debouncedQuery,
       page: currentPage,
       size: 10,
-      category: selectedCategory ,
-      followed_by: following ? "me" : "",
+      category: selectedCategory,
+      followed_by: activeFilters.following ? "me" : "",
+      bookmarked: activeFilters.bookmarked
     }),
   });
 
@@ -102,33 +117,65 @@ const Forums = () => {
     queryFn: () => forumsService.getForumCategories(),
   });
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e:any) => {
     setSearchQuery(e.target.value);
   };
 
-  const handleCategorySelect = (categoryId: number) => {
+  const handleCategorySelect = (categoryId:any) => {
     setSelectedCategory(categoryId === selectedCategory ? undefined : categoryId);
-    setCurrentPage(1);
-    setMobileSidebarOpen(false); // Close mobile sidebar when selecting a category
+    setMobileSidebarOpen(false);
   };
 
-  const handleSortChange = (value: any) => {
+  const handleSortChange = (value:string) => {
     setSortBy(value);
-    setCurrentPage(1);
   };
 
-  const handlePageChange = (page: number) => {
+  const handleFilterToggle = (filterType:string) => {
+    if (!isAuthenticated) {
+      dispatch(SetOpenLogin(true));
+      return;
+    }
+    
+    if (filterType === 'following') {
+      setActiveFilters(prev => ({ 
+        ...prev, 
+        following: !prev.following 
+      }));
+      if (!activeFilters.following) setSortBy('me');
+    } else if (filterType === 'bookmarked') {
+      setActiveFilters(prev => ({ 
+        ...prev, 
+        bookmarked: !prev.bookmarked 
+      }));
+      if (!activeFilters.bookmarked) setSortBy('bookmark');
+    }
+  };
+
+  const clearFilter = (filterType:string) => {
+    if (filterType === 'category') {
+      setSelectedCategory(undefined);
+    } else if (filterType === 'search') {
+      setSearchQuery('');
+      setDebouncedQuery('');
+    } else if (filterType === 'following') {
+      setActiveFilters(prev => ({ ...prev, following: false }));
+    } else if (filterType === 'bookmarked') {
+      setActiveFilters(prev => ({ ...prev, bookmarked: false }));
+    }
+  };
+
+  const handlePageChange = (page:number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleForumClick = (forumId: number) => {
+  const handleForumClick = (forumId:number) => {
     navigate(`/forum/${forumId}`);
   };
 
   const totalPages = forumsData?.count ? Math.ceil(forumsData.count / 10) : 0;
 
-  const getAvatarFallback = (name: string) => {
+  const getAvatarFallback = (name:string) => {
     if (!name) return '';
     const nameParts = name.split(' ');
     if (nameParts.length >= 2) {
@@ -137,7 +184,7 @@ const Forums = () => {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString:string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -147,14 +194,19 @@ const Forums = () => {
     }).format(date);
   };
 
+  // Get active category name
+  const activeCategoryName = selectedCategory && categoriesData?.results
+    ? categoriesData.results.find(c => c.id === selectedCategory)?.name
+    : null;
+
   return (
-    <div className="container mx-auto py-4 md:py-8 px-4">
+    <div className="">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl md:text-2xl font-bold">Tech Forums</h1>
         <Button 
           variant="outline" 
           size="icon" 
-          className="md:hidden"
+          className="lg:hidden"
           onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
         >
           <Menu className="h-5 w-5" />
@@ -171,8 +223,22 @@ const Forums = () => {
         )}
 
         {/* Sidebar - Mobile & Desktop */}
-        <div className={`fixed lg:static z-50 lg:z-auto inset-y-0 left-0 w-72 p-4 lg:p-0 bg-background lg:bg-transparent overflow-y-auto transition-transform duration-300 ease-in-out ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 order-2 lg:order-1`}>
-          <div className="space-y-6">
+        <div className={`fixed lg:static z-50 lg:z-auto inset-y-0 left-0 w-72 p-4 lg:p-0 bg-background lg:bg-transparent overflow-y-auto transition-transform duration-300 ease-in-out ${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 order-2 lg:order-1`}>
+          <div className="space-y-6 lg:sticky lg:top-4">
+            <div className="flex justify-between items-center mb-6 lg:hidden">
+              <h2 className="font-semibold">Browse Forums</h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-1 h-auto"
+                onClick={() => setMobileSidebarOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            
             <div className="mb-6">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -191,7 +257,7 @@ const Forums = () => {
                   variant={sortBy === 'popular' ? "default" : "outline"} 
                   size="sm" 
                   className="justify-start"
-                  onClick={() => handleSortChange('popular')}
+                  onClick={() => setSortBy('popular')}
                 >
                   <TrendingUp className="h-4 w-4 mr-2" /> Popular
                 </Button>
@@ -199,30 +265,24 @@ const Forums = () => {
                   variant={sortBy === 'recent' ? "default" : "outline"} 
                   size="sm" 
                   className="justify-start"
-                  onClick={() => handleSortChange('recent')}
+                  onClick={() => setSortBy('recent')}
                 >
                   <Clock className="h-4 w-4 mr-2" /> Recent
                 </Button>
                 <Button 
-                 variant={sortBy === 'me' ? "default" : "outline"} 
-                size="sm" className="justify-start"
-                
-                  onClick={() => {
-               if (isAuthenticated) {
-                    setFollowing(!following);
-                    setSortBy('me');
-                    setCurrentPage(1);
-                  }
-                  else {
-                    dispatch(SetOpenLogin(true));
-                  }
-                
-               }
-                  }
+                  variant={activeFilters.following ? "default" : "outline"} 
+                  size="sm" 
+                  className="justify-start"
+                  onClick={() => handleFilterToggle('following')}
                 >
                   <Star className="h-4 w-4 mr-2 text-primary" /> Following
                 </Button>
-                <Button variant="outline" size="sm" className="justify-start">
+                <Button
+                  variant={activeFilters.bookmarked ? "default" : "outline"} 
+                  size="sm" 
+                  className="justify-start"
+                  onClick={() => handleFilterToggle('bookmarked')}
+                >
                   <Bookmark className="h-4 w-4 mr-2 text-primary" /> Saved
                 </Button>
               </div>
@@ -240,7 +300,7 @@ const Forums = () => {
                   {categoriesData?.results?.map(category => (
                     <CategoryButton
                       key={category.id}
-                      icon={<Tag className={`h-4 w-4 mr-2 ${selectedCategory === category.id ? '' : 'text-primary'}`} />}
+                      icon={<Tag className={`h-4 w-4 ${selectedCategory === category.id ? '' : 'text-primary'}`} />}
                       label={category.name}
                       count={category.forum_count || 0}
                       active={selectedCategory === category.id}
@@ -269,12 +329,49 @@ const Forums = () => {
 
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6 order-1 lg:order-2">
+          {/* Active Filters */}
+          {(debouncedQuery || selectedCategory || activeFilters.following || activeFilters.bookmarked) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              <div className="text-sm text-muted-foreground flex items-center mr-2">
+                Filters:
+              </div>
+              
+              {debouncedQuery && (
+                <FilterBadge 
+                  label={`Search: ${debouncedQuery}`} 
+                  onClear={() => clearFilter('search')} 
+                />
+              )}
+              
+              {activeCategoryName && (
+                <FilterBadge 
+                  label={`Category: ${activeCategoryName}`} 
+                  onClear={() => clearFilter('category')} 
+                />
+              )}
+              
+              {activeFilters.following && (
+                <FilterBadge 
+                  label="Following" 
+                  onClear={() => clearFilter('following')} 
+                />
+              )}
+              
+              {activeFilters.bookmarked && (
+                <FilterBadge 
+                  label="Bookmarked" 
+                  onClear={() => clearFilter('bookmarked')} 
+                />
+              )}
+            </div>
+          )}
+          
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <h2 className="text-lg md:text-xl font-semibold">
               {debouncedQuery ? `Search: "${debouncedQuery}"` : 'All Forums'}
-              {selectedCategory && categoriesData?.results && (
+              {activeCategoryName && (
                 <span className="text-muted-foreground ml-2 text-sm">
-                  in {categoriesData.results.find(c => c.id === selectedCategory)?.name}
+                  in {activeCategoryName}
                 </span>
               )}
             </h2>
@@ -301,9 +398,7 @@ const Forums = () => {
 
           {forumsLoading ? (
             <div className="space-y-4 md:space-y-6">
-              <ForumSkeleton />
-              <ForumSkeleton />
-              <ForumSkeleton />
+              {[1, 2, 3].map(i => <ForumSkeleton key={i} />)}
             </div>
           ) : forumsError ? (
             <div className="p-6 md:p-8 text-center rounded-xl border border-border">
@@ -323,104 +418,129 @@ const Forums = () => {
                   ? `No forums matching "${debouncedQuery}" were found.` 
                   : selectedCategory 
                     ? "No forums in this category yet." 
-                    : "No forums available. Be the first to create one!"}
+                    : activeFilters.following
+                      ? "You're not following any forums yet."
+                      : activeFilters.bookmarked
+                        ? "You haven't bookmarked any forums yet."
+                        : "No forums available. Be the first to create one!"}
               </p>
+              {(activeFilters.following || activeFilters.bookmarked || selectedCategory || debouncedQuery) && (
+                <Button variant="outline" onClick={() => {
+                  setActiveFilters({ following: false, bookmarked: false });
+                  setSelectedCategory(undefined);
+                  setSearchQuery('');
+                  setDebouncedQuery('');
+                  setSortBy('popular');
+                }}>
+                  Clear All Filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
-              {forumsData?.results?.map((forum) => (
-                <div 
-                  key={forum.id} 
-                  className="bg-card rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-300 border border-border/50 cursor-pointer"
-                  onClick={() => handleForumClick(forum.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                      {forum.created_by.profile_image ? (
-                        <AvatarImage src={forum.created_by.profile_image} alt={forum.created_by.username} />
-                      ) : (
-                        <AvatarFallback>
-                          {getAvatarFallback(`${forum.created_by.first_name} ${forum.created_by.last_name}`)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
-                        <span className="font-medium text-sm md:text-base">{forum.created_by.username}</span>
-                        <span className="text-xs md:text-sm text-muted-foreground">• {formatDate(forum.created_at)}</span>
-                        {forum.followers_count > 10 && (
-                          <Badge className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs">Hot</Badge>
+              <div className="space-y-4 md:space-y-6">
+                {forumsData?.results?.map((forum) => (
+                  <div 
+                    key={forum.id} 
+                    className="bg-card rounded-xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all duration-300 border border-border/50 cursor-pointer"
+                    onClick={() => handleForumClick(forum.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
+                        {forum.created_by.profile_image ? (
+                          <AvatarImage src={forum.created_by.profile_image} alt={forum.created_by.username} />
+                        ) : (
+                          <AvatarFallback>
+                            {getAvatarFallback(`${forum.created_by.first_name} ${forum.created_by.last_name}`)}
+                          </AvatarFallback>
                         )}
-                        {!forum.is_public && (
-                          <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 text-xs">Private</Badge>
-                        )}
-                        {forum.locked && (
-                          <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 text-xs">Locked</Badge>
-                        )}
-                      </div>
+                      </Avatar>
                       
-                      <h3 className="text-base md:text-lg font-semibold mb-2 hover:text-primary transition-colors line-clamp-2">
-                        {forum.title}
-                      </h3>
-                      
-                      <p className="text-muted-foreground mb-3 line-clamp-2 text-sm md:text-base">
-                        {forum.description}
-                      </p>
-                      
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary text-xs md:text-sm">
-                          #{forum.category.name}
-                        </Badge>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
-                          {forum.discussion_count || 0} discussions
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Bookmark className="h-3 w-3 md:h-4 md:w-4" />
-                          {forum.followers_count || 0} followers
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <PieChart className="h-3 w-3 md:h-4 md:w-4" />
-                          {forum.views || 0} views
-                        </div>
-                      </div>
-                      
-                      {forum.latest_discussion && (
-                        <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border/50">
-                          <div className="flex items-center gap-2 mb-1 md:mb-2">
-                            <div className="w-1 h-4 md:h-5 bg-primary/50 rounded"></div>
-                            <span className="text-xs md:text-sm font-medium">Latest Discussion</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
+                          <span className="font-medium text-sm md:text-base truncate max-w-full sm:max-w-xs">
+                            {forum.created_by.username}
+                          </span>
+                          <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
+                            • {formatDate(forum.created_at)}
+                          </span>
+                          <div className="flex flex-wrap gap-1 mt-1 sm:mt-0">
+                            {forum.followers_count > 10 && (
+                              <Badge className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs">Hot</Badge>
+                            )}
+                            {!forum.is_public && (
+                              <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 text-xs">Private</Badge>
+                            )}
+                            {forum.locked && (
+                              <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 text-xs">Locked</Badge>
+                            )}
                           </div>
-                          <div className="ml-3">
-                            <div className="flex flex-wrap items-center gap-1 md:gap-2">
-                              <Avatar className="h-5 w-5 md:h-6 md:w-6">
-                                {forum.latest_discussion.author.profile_image ? (
-                                  <AvatarImage src={forum.latest_discussion.author.profile_image} />
-                                ) : (
-                                  <AvatarFallback>
-                                    {getAvatarFallback(`${forum.latest_discussion.author.first_name} ${forum.latest_discussion.author.last_name}`)}
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                              <span className="text-xs md:text-sm">{forum.latest_discussion.author.username}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatDate(forum.latest_discussion.created_at)}
-                              </span>
+                        </div>
+                        
+                        <h3 className="text-base md:text-lg font-semibold mb-2 hover:text-primary transition-colors line-clamp-2 break-words">
+                          {forum.title}
+                        </h3>
+                        
+                        <p className="text-muted-foreground mb-3 line-clamp-2 text-sm md:text-base break-words">
+                          {forum.description}
+                        </p>
+                        
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Badge variant="outline" className="hover:bg-primary/10 hover:text-primary text-xs md:text-sm">
+                            #{forum.category.name}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>{forum.discussion_count || 0} discussions</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Bookmark className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>{forum.followers_count || 0} followers</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <PieChart className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>{forum.views || 0} views</span>
+                          </div>
+                        </div>
+                        
+                        {forum.latest_discussion && (
+                          <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border/50">
+                            <div className="flex items-center gap-2 mb-1 md:mb-2">
+                              <div className="w-1 h-4 md:h-5 bg-primary/50 rounded"></div>
+                              <span className="text-xs md:text-sm font-medium">Latest Discussion</span>
                             </div>
-                            <p className="text-sm font-medium mt-1 hover:text-primary line-clamp-1">
-                              {forum.latest_discussion.title}
-                            </p>
+                            <div className="ml-3">
+                              <div className="flex flex-wrap items-center gap-1 md:gap-2">
+                                <Avatar className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0">
+                                  {forum.latest_discussion.author.profile_image ? (
+                                    <AvatarImage src={forum.latest_discussion.author.profile_image} />
+                                  ) : (
+                                    <AvatarFallback>
+                                      {getAvatarFallback(`${forum.latest_discussion.author.first_name} ${forum.latest_discussion.author.last_name}`)}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                <span className="text-xs md:text-sm truncate max-w-full sm:max-w-xs">
+                                  {forum.latest_discussion.author.username}
+                                </span>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatDate(forum.latest_discussion.created_at)}
+                                </span>
+                              </div>
+                              <p className="text-sm font-medium mt-1 hover:text-primary line-clamp-1 break-words">
+                                {forum.latest_discussion.title}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
               
               {/* Pagination */}
               {totalPages > 1 && (
@@ -433,35 +553,46 @@ const Forums = () => {
                       />
                     </PaginationItem>
                     
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNumber;
+                    {(() => {
+                      // Calculate which page numbers to show
+                      let pageNumbers = [];
                       
                       if (totalPages <= 5) {
-                        pageNumber = i + 1;
+                        // If 5 or fewer pages, show all
+                        pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
                       } else if (currentPage <= 3) {
-                        pageNumber = i + 1;
+                        // Near the start
+                        pageNumbers = [1, 2, 3, 4, 5];
                       } else if (currentPage >= totalPages - 2) {
-                        pageNumber = totalPages - 4 + i;
+                        // Near the end
+                        pageNumbers = Array.from(
+                          { length: 5 }, 
+                          (_, i) => totalPages - 4 + i
+                        );
                       } else {
-                        pageNumber = currentPage - 2 + i;
+                        // In the middle
+                        pageNumbers = [
+                          currentPage - 2,
+                          currentPage - 1,
+                          currentPage,
+                          currentPage + 1,
+                          currentPage + 2
+                        ];
                       }
                       
-                      if (pageNumber > 0 && pageNumber <= totalPages) {
-                        return (
-                          <PaginationItem key={pageNumber}>
-                            <Button 
-                              variant={currentPage === pageNumber ? "default" : "outline"}
-                              size="sm"
-                              className="h-8 w-8"
-                              onClick={() => handlePageChange(pageNumber)}
-                            >
-                              {pageNumber}
-                            </Button>
-                          </PaginationItem>
-                        );
-                      }
-                      return null;
-                    })}
+                      return pageNumbers.map(pageNumber => (
+                        <PaginationItem key={pageNumber}>
+                          <Button 
+                            variant={currentPage === pageNumber ? "default" : "outline"}
+                            size="sm"
+                            className="h-8 w-8"
+                            onClick={() => handlePageChange(pageNumber)}
+                          >
+                            {pageNumber}
+                          </Button>
+                        </PaginationItem>
+                      ));
+                    })()}
                     
                     <PaginationItem>
                       <PaginationNext 
@@ -483,13 +614,15 @@ const Forums = () => {
 const ForumSkeleton = () => (
   <div className="bg-card rounded-xl p-4 md:p-5 shadow-sm border border-border/50 animate-pulse">
     <div className="flex items-start gap-3">
-      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-muted"></div>
+      <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-muted flex-shrink-0"></div>
       <div className="flex-1">
         <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
           <div className="h-3 md:h-4 w-20 md:w-24 bg-muted rounded"></div>
           <div className="h-3 w-12 md:w-16 bg-muted rounded"></div>
         </div>
         <div className="h-4 md:h-6 w-3/4 bg-muted rounded mb-2"></div>
+        <div className="h-3 md:h-4 w-full bg-muted rounded mb-2"></div>
+        <div className="h-3 md:h-4 w-4/5 bg-muted rounded mb-3"></div>
         <div className="flex flex-wrap gap-2 mb-3">
           <div className="h-4 w-16 bg-muted rounded"></div>
           <div className="h-4 w-20 bg-muted rounded"></div>

@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   Reply,
+  BookmarkCheck,
 } from 'lucide-react';
 import { blogsService } from '@/apis/services/tet/blogs.service';
 import ReactMarkdown from 'react-markdown';
@@ -26,6 +27,8 @@ import rehypeHighlight from 'rehype-highlight';
 import { useAuthStore } from '@/hooks/use-auth-store';
 import { useAppDispatch } from '@/store/store-hooks';
 import { SetOpenLogin } from '@/store/slices/auth/auth.slice';
+import { toast } from 'react-toastify';
+import { accountService } from '@/apis/services/auth/account.service';
 
 
 const REACTION_ICONS = {
@@ -97,6 +100,35 @@ const BlogDetail = () => {
     },
   });
 
+
+    const handleShareProject = async () => {
+      const shareText = `Check out this ARTICLE: ${blog?.title}\n${window.location.href}`;
+    
+      // Try Web Share API first (won't work on Ubuntu/Chrome)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: blog?.title,
+            text: `Check out this blog: ${blog?.title}`,
+            url: window.location.href,
+          });
+          return; // Success, exit early
+        } catch (err) {
+          console.log("Web Share failed, falling back to clipboard");
+        }
+      }
+    
+      // Fallback: Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareText);
+        // Show a toast/notification (example using a simple alert)
+        toast.info("Link copied to clipboard! 🎉"); // Replace with a proper toast
+      } catch (err) {
+        console.error("Failed to copy:", err);
+        toast.info("Could not copy link. Please try manually."); // Fallback for clipboard errors
+      }
+    };
+
   // Toggle reaction
   const handleReaction = (reactionType: ReactionType) => {
    if (!isAuthenticated) {
@@ -109,6 +141,28 @@ const BlogDetail = () => {
         addReaction.mutate(reactionType);
       }
   };
+
+    const {mutate:toogleBookMark, isPending:loadingBookMark} = useMutation({
+      mutationFn: () => {
+        return accountService.toogleBookMark({
+          content_type: 'blog',
+        object_id: blog?.id,
+        bookmark_type: 'blog',
+        });
+      },
+      onSuccess: () => {
+        toast.success("Forum bookmarked successfully");
+        queryClient.invalidateQueries({ queryKey: ["blog", slug] });
+      },
+      onError: (error) => {
+        console.error("Error bookmarking forum:", error);
+        toast.error("Failed to bookmark forum. Please try again.");
+      },
+    });
+
+    const handleLoginModal = () => {
+        dispatch(SetOpenLogin(true));
+      };
 
   // Toggle replies visibility
   const toggleReplies = (commentId: number) => {
@@ -151,7 +205,7 @@ const BlogDetail = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4">
       {/* Blog Content */}
       <article className="mb-12">
         <div className="flex items-center justify-between mb-6">
@@ -159,10 +213,34 @@ const BlogDetail = () => {
             ← Back to blogs
           </Button>
           <div className="flex gap-2">
-            <Button variant="ghost" size="icon">
-              <Bookmark className="h-4 w-4" />
+          <Button variant="outline" size="sm"
+                 onClick={() =>  {
+                  if (!isAuthenticated) {
+                    handleLoginModal();
+                    return;
+                  }else{
+                    toogleBookMark()
+                  }
+                 }}
+                 disabled={loadingBookMark}
+            >
+           {
+            blog.bookmark_status?.is_bookmarked ? (
+              <>
+              <BookmarkCheck className="h-4 w-4 mr-1" />
+              Saved
+              </>
+            ): (
+              <>
+                 <Bookmark className="h-4 w-4 mr-1" />
+                 Save
+              </>
+            )
+           }
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon"
+               onClick={handleShareProject}
+            >
               <Share2 className="h-4 w-4" />
             </Button>
           </div>

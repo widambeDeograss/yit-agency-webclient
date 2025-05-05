@@ -19,7 +19,7 @@ const Ctas = () => {
         <div className="container mx-auto px-4 text-center">
         <div className="relative">
             <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary/20 rounded-full filter blur-xl animate-blob"></div>
-            <div className="absolute -bottom-14 -right-14 w-40 h-40 bg-primary/30 rounded-full filter blur-xl animate-blob animation-delay-4000"></div>
+            <div className="absolute -bottom-14 -right-14 w-40 h-40 bg-primary/30 rounded-full filter blur-xl animate-blob animation-delay-4000 hidden sm:hidden md:block"></div>
            
           <h2 className="text-3xl font-bold mb-6">Ready to Join the Tech Revolution?</h2>
           <p className="text-muted-foreground  max-w-2xl mx-auto mb-8">
@@ -37,7 +37,9 @@ const Ctas = () => {
             >
               Join Our Community
             </Button>
-            <Button variant="outline" className=" px-8 py-6 text-lg">
+            <Button variant="outline" className=" px-8 py-6 text-lg"
+            onClick={() => {navigate('/contact')}}
+            >
               Contact Us
             </Button>
           </div>

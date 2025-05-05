@@ -19,8 +19,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BlobBackground } from "@/components/shared/blob-bg"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useNavigate } from "react-router-dom"
+import { useAuthStore } from "@/hooks/use-auth-store"
+import { useAppDispatch } from "@/store/store-hooks"
+import { SetOpenLogin } from "@/store/slices/auth/auth.slice"
 
 export default function AboutPage() {
+  const navigate =  useNavigate();
+  const {isAuthenticated} =  useAuthStore();
+  const dispatch = useAppDispatch();
+
   const teamMembers = [
     { name: "Neema James", fallback:"NJ", role: "CEO & Founder", image: "/api/placeholder/80/80" },
     { name: "Stella Kaishe",fallback:"SK", role: "Finance Director & Co-Founder", image: "/api/placeholder/80/80" },
@@ -66,7 +74,7 @@ export default function AboutPage() {
               About YIT Agency
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Empowering Tanzania's <span className="text-primary">Youth</span> Through Technology
+              Empowering <span className="text-primary">Youth</span> Through Technology
             </h1>
             <p className="text-lg text-muted-foreground">
               Founded in 2023, we've grown from a WhatsApp group of 90+ tech enthusiasts to a thriving community of 5,000+ members passionate about technology.
@@ -84,10 +92,20 @@ export default function AboutPage() {
               <p className="text-lg text-muted-foreground">
                 Youth in Technology (YIT) Agency was born from a passion for technology and a vision to empower Tanzania's youth. Founded on July 5, 2023, we began as a small WhatsApp community of 90+ tech enthusiasts eager to learn, connect, and grow together.
               </p>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-muted-foreground"
+              
+              >
                 By July 14, 2023, YIT Agency was officially registered, marking the beginning of our journey as Tanzania's fastest-growing tech community. Today, with over 5,000 members, we've created a dynamic platform where young innovators can thrive in the ever-evolving world of technology.
               </p>
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-primary hover:bg-primary/90"
+                onClick={() => {
+                  if (isAuthenticated) {
+                    navigate('/tet');
+                  } else {
+                    dispatch(SetOpenLogin(true));
+                  }
+                }}
+              >
                 Join Our Community <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -109,7 +127,7 @@ export default function AboutPage() {
                   </div>
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <h4 className="font-semibold mb-2">Our Vision</h4>
-                    <p className="text-muted-foreground">In the next five years, to become a leading technology hub for youth—providing full exposure to technology through learning, skill-building, and hands-on experiences.</p>
+                    <p className="text-muted-foreground">In the next five years, to become a leading technology hub for youths providing full exposure to technology through learning, skill-building, and hands-on experiences.</p>
                   </div>
                 </div>
               </div>
@@ -246,14 +264,24 @@ export default function AboutPage() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             With 5,000+ members, YIT Agency provides the perfect platform to gain skills, collaborate on projects, and launch your tech career.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-primary hover:bg-primary/90 px-8 py-6 text-lg">
-              Join Our Community
-            </Button>
-            <Button variant="outline" className="px-8 py-6 text-lg">
-              Learn More <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+         <div className="flex flex-wrap justify-center gap-4">
+                    <Button className="bg-primary hover:bg-green-600  px-8 py-6 text-lg"
+                    onClick={() => {
+                      if (isAuthenticated) {
+                        navigate('/tet');
+                      } else {
+                        dispatch(SetOpenLogin(true));
+                      }
+                    }}
+                    >
+                      Join Our Community
+                    </Button>
+                    <Button variant="outline" className=" px-8 py-6 text-lg"
+                    onClick={() => {navigate('/contact')}}
+                    >
+                      Contact Us
+                    </Button>
+                  </div>
         </div>
       </section>
     </div>

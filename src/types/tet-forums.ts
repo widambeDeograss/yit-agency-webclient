@@ -26,6 +26,15 @@ export interface Forum {
   drafted: boolean;
   published: boolean;
   locked: boolean;
+  bookmark_status?: {
+    is_bookmarked: boolean;
+    bookmark?: {
+      id: number;
+      notes: string | null;
+      folder: number | null;
+      created_at: string;
+    };
+  };
 }
 
 export interface ForumApiResponse {
