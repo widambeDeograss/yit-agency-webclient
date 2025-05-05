@@ -1,0 +1,1 @@
+import{V as t}from"./index-XddlkiPy.js";class r extends t{constructor(){super("baseService")}getProjects(e){return this.get("/projects/",e)}getProjectDetail(e){return this.get(`/projects/${e}/`)}getCategories(){return this.get("/projects/categories/")}}const o=new r;export{o as p};

@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { setupInterceptors } from './interceptor';
 
 const microservicesUrls = {
-    baseService: 'http://127.0.0.1:8000/api/v1',
+    baseService: 'https://api.yit-agency.com/api/v1',
   };
   
 export type ServiceType = keyof typeof microservicesUrls;

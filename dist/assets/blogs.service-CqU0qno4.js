@@ -1,0 +1,6 @@
+import{c as o,V as s}from"./index-XddlkiPy.js";/**
+ * @license lucide-react v0.487.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const r=[["path",{d:"m18 15-6-6-6 6",key:"153udz"}]],l=o("chevron-up",r);class n extends s{constructor(){super("baseService")}getBlogs(e){return this.get("/blogs/blogs/",e)}getBlogDetail(e){return this.get(`/blogs/blogs/${e}/`)}getCategories(){return this.get("/blogs/categories/")}addReactionToBlog(e,t){return this.post(`/blogs/blogs/${e}/reactions/`,{reaction_type:t})}removeReactionFromBlog(e){return this.delete(`/blogs/blogs/${e}/reactions/`)}getBlogComments(e,t){return this.get(`/blogs/blogs/${e}/comments/`,t)}createBlogComment(e,t){return this.post(`/blogs/blogs/${e}/comments/`,{content:t})}getCommentDetail(e){return this.get(`/blogs/comments/${e}/`)}updateComment(e,t){return this.patch(`/blogs/comments/${e}/`,{content:t})}deleteComment(e){return this.delete(`/blogs/comments/${e}/`)}replyToComment(e,t){return this.post(`/blogs/comments/${e}/replies/`,{content:t})}addReactionToComment(e,t){return this.post(`/blogs/comments/${e}/reactions/`,{reaction_type:t})}removeReactionFromComment(e){return this.delete(`/blogs/comments/${e}/reactions/`)}}const c=new n;export{l as C,c as b};
