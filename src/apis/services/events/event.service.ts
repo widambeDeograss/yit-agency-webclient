@@ -22,6 +22,10 @@ class EventsService extends APIClient {
     registerForEvent(eventId: number) {
         return this.post<{ detail: string; registration_id?: number; waitlisted?: boolean }>(`/events/events/${eventId}/register/`, {});
     }
+
+    subscribeToNewsletter(email: string) {
+        return this.post<{ detail: string }>(`/newsletters/subscriptions/`, { email });
+    }
 }
 
 export const eventsService = new EventsService();

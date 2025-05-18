@@ -1,9 +1,37 @@
-import { Briefcase, Mail, MessageSquare, Send } from 'lucide-react'
-import React from 'react'
+import { Briefcase, Loader2, Mail, MessageSquare, Send } from 'lucide-react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useMutation } from '@tanstack/react-query'
+import { eventsService } from '@/apis/services/events/event.service'
+import { toast } from 'react-toastify'
 
 const Footer = () => {
+  const [email, setemail] = useState("")
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setemail(e.target.value)
+  }
+
+  const mutate =  useMutation({
+    mutationFn: async (email: string) => {
+     return await eventsService.subscribeToNewsletter(email);
+    },
+    onSuccess: () => {
+     toast.success("You have successfully subscribed to our newsletter!");
+      setemail("")
+    },
+    onError: () => {
+      toast.error("Failed to subscribe to the newsletter. Please try again.");
+    }
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Handle email submission logic here
+    console.log("Email submitted:", email)
+    mutate.mutate(email)
+  }
   return (
     <footer className="bg-backgroud text-muted-foreground pt-12 pb-6">
       <div className="container mx-auto px-4">
@@ -17,14 +45,33 @@ const Footer = () => {
               </p>
             </div>
             <div className="lg:col-span-2">
-              <form className="flex flex-col sm:flex-row gap-2">
+              <form className="flex flex-col sm:flex-row gap-2"
+                onSubmit={handleSubmit}
+              >
                 <Input 
                   type="email" 
+                  value={email}
+                  onChange={handleEmailChange}
+                  required
+                  name="email"
+                  id="email"
                   placeholder="Your email address" 
                   className="bg-background/50 border-primary/20 focus:border-primary" 
                 />
                 <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap">
-                  Subscribe <Send className="ml-2 h-4 w-4" />
+                  {
+                    mutate.isPending ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="animate-spin h-5 w-5 text-white" />
+                        Subscribing...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Send className="h-5 w-5" />
+                        Subscribe
+                      </span>
+                    )
+                  }
                 </Button>
               </form>
             </div>
