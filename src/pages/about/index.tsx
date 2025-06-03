@@ -34,7 +34,6 @@ export default function AboutPage() {
     { name: "Stella Kaishe",fallback:"SK", role: "Finance Director & Co-Founder", image: "/api/placeholder/80/80" },
     { name: "Innocent Ushaki",fallback:"IU", role: "Chief Operating Officer", image: "/api/placeholder/80/80" },
     { name: "Frank Youze",fallback:"FY", role: "Chief Technology Officer", image: "/api/placeholder/80/80" },
-    { name: "Rebeca Joshua", fallback:"RJ",role: "Marketing Director", image: "/api/placeholder/80/80" }
   ]
 
   const sdgGoals = [
@@ -218,7 +217,7 @@ export default function AboutPage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {teamMembers.map((member, index) => (
               <div key={index} className="bg-card border border-border p-4 rounded-xl text-center shadow-md">
               <Avatar className="w-16 h-16 mx-auto">

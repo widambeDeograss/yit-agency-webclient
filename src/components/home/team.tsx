@@ -21,8 +21,10 @@ const Team = () => {
               Dedicated professionals committed to empowering youth through technology
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
+         <div className='w-full'>
+           <div className='container mx-auto'>
+      
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 ">
             <Card className="border-border shadow-md hover:shadow-lg transition-all">
               <CardHeader className="text-center pb-2">
                 <Avatar className="w-24 h-24 mx-auto">
@@ -78,21 +80,11 @@ const Team = () => {
                 <p className="text-muted-foreground text-sm">Technology leader guiding our tech initiatives and innovations.</p>
               </CardContent>
             </Card>
-            
-            <Card className="border-border shadow-md hover:shadow-lg transition-all">
-              <CardHeader className="text-center pb-2">
-                <Avatar className="w-24 h-24 mx-auto">
-                  <AvatarImage src="/api/placeholder/96/96" alt="Rebeca Joshua" />
-                  <AvatarFallback>RJ</AvatarFallback>
-                </Avatar>
-                <CardTitle className="mt-4 text-foreground">Rebeca Joshua</CardTitle>
-                <CardDescription className="font-medium text-primary">Marketing Director</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground text-sm">Creative marketer expanding our reach and community engagement.</p>
-              </CardContent>
-            </Card>
+    
           </div>
+
+           </div>
+         </div>
         </div>
       </section>
     </div>

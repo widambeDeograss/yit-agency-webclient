@@ -7,11 +7,11 @@ import { eventsService } from '@/apis/services/events/event.service'
 import { toast } from 'react-toastify'
 
 const Footer = () => {
-  const [email, setemail] = useState("")
+  const [email, setemail] = useState("");
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setemail(e.target.value)
-  }
+  };
 
   const mutate =  useMutation({
     mutationFn: async (email: string) => {
@@ -22,9 +22,9 @@ const Footer = () => {
       setemail("")
     },
     onError: () => {
-      toast.error("Failed to subscribe to the newsletter. Please try again.");
+      toast.error("Failed to subscribe to the newsletter. Your email is probably alredy registered. try again with another email!.");
     }
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,10 +32,10 @@ const Footer = () => {
     console.log("Email submitted:", email)
     mutate.mutate(email)
   }
+
   return (
     <footer className="bg-backgroud text-muted-foreground pt-12 pb-6">
       <div className="container mx-auto px-4">
-        {/* Newsletter Section */}
         <div className="mb-12 bg-primary/5 rounded-xl p-6 border border-primary/20">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
             <div className="lg:col-span-3">

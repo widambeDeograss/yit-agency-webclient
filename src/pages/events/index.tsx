@@ -10,7 +10,9 @@ import {
   ChevronRight, 
   ChevronLeft, 
   ExternalLink, 
-  Video 
+  Video, 
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -144,47 +146,22 @@ const EventsPage = () => {
         </p>
       </div>
 
-      {/* Search and filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <form onSubmit={handleSearch} className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search events..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </form>
-        <div className="flex gap-2">
-          {/* <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
-              <SelectItem value="programming">Programming</SelectItem>
-              <SelectItem value="design">Design</SelectItem>
-              <SelectItem value="ai">AI & Machine Learning</SelectItem>
-              <SelectItem value="web">Web Development</SelectItem>
-              <SelectItem value="mobile">Mobile Development</SelectItem>
-              <SelectItem value="career">Career Development</SelectItem>
-            </SelectContent>
-          </Select> */}
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => {
-              setSearchQuery('');
-              setCategoryFilter('');
-              setPage(1);
-            }}
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+  <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-between items-center">
+  <form onSubmit={handleSearch} className="w-full sm:w-auto sm:flex-1">
+    <div className="relative max-w-md w-full mx-auto sm:mx-0">
+      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder="Search events..."
+        className="pl-10"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+    </div>
+  </form>
+
+  {/* Filter buttons or select dropdowns can go here later */}
+</div>
+
 
       {/* Events Grid */}
       <div className="mb-12">
@@ -351,80 +328,160 @@ const EventsPage = () => {
         )}
       </div>
 
-      {/* Tech News Slider */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-6">Latest Tech News</h2>
-        {newsLoading ? (
-          <div className="flex gap-6 overflow-x-auto pb-4">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="w-80 shrink-0">
-                <Skeleton className="h-48 w-full" />
-                <CardHeader>
-                  <Skeleton className="h-6 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-3/4" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="overflow-x-auto pb-4">
-              <div className="flex gap-6 min-w-max">
-                {news?.map((item) => (
-              <Card key={item.id} className="w-80 shrink-0">
-              <CardHeader className="pb-3">
+   {/* Tech News Slider */}
+<div className="mb-8">
+  <h2 className="text-2xl font-bold mb-6">Latest Tech News</h2>
+  {newsLoading ? (
+    <div className="flex gap-6 overflow-x-auto pb-4">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i} className="w-80 shrink-0">
+          <Skeleton className="h-48 w-full" />
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-full" />
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  ) : (
+    <div className="relative">
+      <div className="overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-6 min-w-max">
+          {news?.map((item) => (
+            <Card key={item.id} className="w-80 shrink-0 hover:shadow-lg transition-shadow duration-200">
+              {/* Featured Image */}
+              {item.featured_image && (
+                <div className="relative h-48 overflow-hidden rounded-t-lg">
+                  <img 
+                    src={item.featured_image} 
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
                   {item.is_featured && (
-                      <Badge className="bg-primary/20 text-primary hover:bg-primary/30 mb-2 self-start">
-                          Featured
-                      </Badge>
+                    <Badge className="absolute top-2 left-2 bg-primary/90 text-primary-foreground hover:bg-primary">
+                      Featured
+                    </Badge>
                   )}
-                  <CardTitle className="line-clamp-2">{item.title}</CardTitle>
-                  <CardDescription className="flex items-center text-xs">
-                      <Avatar className="h-6 w-6 mr-2">
-                          <AvatarImage src={item.author?.profile_picture} />
-                          <AvatarFallback>
-                              {item.author ? item?.author?.full_name?.split(' ')?.map(name => name[0]).join('') : 'AN'}
-                          </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">
-                          {item.author?.full_name || 'Anonymous'}
-                      </span>
-                      <span className="mx-2">•</span>
-                      <span>{format(new Date(item.published_at), 'MMM d, yyyy')}</span>
-                  </CardDescription>
+                  {/* Category Badge */}
+                  {item.categories && item.categories.length > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className="absolute top-2 right-2 bg-background/80 text-foreground"
+                    >
+                      {item.categories[0].name}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              <CardHeader className="pb-3">
+                {!item.featured_image && item.is_featured && (
+                  <Badge className="bg-primary/20 text-primary hover:bg-primary/30 mb-2 self-start">
+                    Featured
+                  </Badge>
+                )}
+                <CardTitle className="line-clamp-2 text-lg leading-tight">
+                  {item.title}
+                </CardTitle>
+                <CardDescription className="flex items-center text-xs space-x-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={item.author?.profile_image} />
+                    <AvatarFallback className="text-xs">
+                      {item.author 
+                        ? `${item.author.first_name?.[0] || ''}${item.author.last_name?.[0] || ''}` 
+                        : 'AN'
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium truncate">
+                    {item.author 
+                      ? `${item.author.first_name || ''} ${item.author.last_name || ''}`.trim() || item.author.username
+                      : 'Anonymous'
+                    }
+                  </span>
+                  <span>•</span>
+                  <span className="whitespace-nowrap">
+                    {format(new Date(item.published_at), 'MMM d, yyyy')}
+                  </span>
+                </CardDescription>
               </CardHeader>
+              
               <CardContent className="pb-3">
-                  <p className="text-sm line-clamp-3">{item.content.replace(/<[^>]*>?/gm, '')}</p>
+                <p className="text-sm line-clamp-3 text-muted-foreground leading-relaxed">
+                  {item.content.replace(/<[^>]*>?/gm, '')}
+                </p>
+                {/* Categories display if no featured image */}
+                {!item.featured_image && item.categories && item.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {item.categories.slice(0, 2).map((category) => (
+                      <Badge 
+                        key={category.id} 
+                        variant="outline" 
+                        className="text-xs"
+                      >
+                        {category.name}
+                      </Badge>
+                    ))}
+                    {item.categories.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{item.categories.length - 2} more
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </CardContent>
-              <CardFooter>
-                  <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => navigate(`/news/${item.id}`)}
-                  >
-                      Read More
-                      {item.news_type === 'external' && (
-                          <ExternalLink className="ml-2 h-3 w-3" />
-                      )}
-                  </Button>
+              
+              <CardFooter className="pt-0">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => {
+                    if (item.news_type === 'external' && item.source_url) {
+                      window.open(item.source_url, '_blank', 'noopener,noreferrer');
+                    } else {
+                      navigate(`/news/${item.id}`);
+                    }
+                  }}
+                >
+                  {item.news_type === 'external' ? 'Read Original' : 'Read More'}
+                  {item.news_type === 'external' && (
+                    <ExternalLink className="ml-2 h-3 w-3" />
+                  )}
+                </Button>
               </CardFooter>
-          </Card>
-                ))}
-              </div>
-            </div>
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none"></div>
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none"></div>
-          </div>
-        )}
+            </Card>
+          ))}
+        </div>
       </div>
+      
+      {/* Gradient overlays for visual effect */}
+      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none z-10"></div>
+      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10"></div>
+      
+      {/* Optional: Add scroll indicators */}
+      {news && news.length > 3 && (
+        <div className="flex justify-center mt-4 space-x-2">
+          <div className="text-xs text-muted-foreground flex items-center">
+            <ArrowLeft className="h-3 w-3 mr-1" />
+            Scroll for more
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </div>
+        </div>
+      )}
+    </div>
+  )}
+</div>
     </div>
   );
 };
